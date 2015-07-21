@@ -9,7 +9,7 @@ import math.abs
 import breeze.linalg._
 
 // There will be one vector parameter (and one parameter for each unique feature) used in the entire MultiP model
-// MultiP uses online learning technique, that the parameters would be updated (if needed to be updated) for each single training example. 
+// MultiP uses online learning technique, that the parameters would be updated (if needed to be updated) for each single training example.
 abstract class Parameters(val data:SentPairsData) {
 	val nRel  = data.nRel
 	val nFeat = data.nFeature
@@ -32,7 +32,7 @@ abstract class Parameters(val data:SentPairsData) {
 
 	var trainSimple = false
 	var updateTheta = true
-  
+
 	def computeThetaAverage {
     	if(Constants.TIMING) {
       		Utils.Timer.start("computeThetaAverage")
@@ -75,7 +75,7 @@ abstract class Parameters(val data:SentPairsData) {
 		if(Constants.TIMING) {
 			Utils.Timer.start("dumpTheta")
 		}
-    
+
 		val fw = new FileWriter(outFile)
 
 		val NON_PARAPHRASE = 0
@@ -124,15 +124,15 @@ abstract class Parameters(val data:SentPairsData) {
 
 class MultiP(data:SentPairsData) extends Parameters(data) {
 
-	
+
 	def train(nIter:Int) = {
 		train(nIter, null)
 	}
 
-	def train(nIter:Int, outFile:FileWriter) = { 
+	def train(nIter:Int, outFile:FileWriter) = {
 		//Randomly permute the training data
 		val training = Random.shuffle((0 until data.data.length).toList).filter((s12) => true)
-		
+
 		for(i <- 0 until nIter) {
 			//println("iteration " + i)
 			for(s12 <- training) {
@@ -142,7 +142,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 
 				data.data(s12).z = iHidden.z
 				updateTheta(iAll, iHidden)
-				
+
 
 			}
 		}
@@ -160,7 +160,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		//First pre-compute postZ
 		for(i <- 0 until dsp.features.length) {
 			postZ(i,::) := (theta * dsp.features(i)).toDense
-			
+
 			//normalize (note: this isn't necessary, except for analysis purposes and generating P/R curve on training data)
 			val logExpSum = MathUtils.LogExpSum(postZ(i,::).toArray)
 			postZ(i,::) -= logExpSum
@@ -169,15 +169,15 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 
 		val REL_NON_PARAPHRASE = 0
 		val REL_PARAPHRASE = 1
-		
+
 		var best:Int = 0
-		
-		val covered = DenseVector.zeros[Boolean](dsp.features.length) 
-		
+
+		val covered = DenseVector.zeros[Boolean](dsp.features.length)
+
 		if (dsp.rel(REL_PARAPHRASE) == 1.0) {
 			val scores = postZ(::,REL_PARAPHRASE)
 			val topscore = scores.max
-			
+
 			for(i <- 0 until dsp.features.length) {
 				if (scores(i) == topscore) {
 					z(i) = REL_PARAPHRASE
@@ -188,8 +188,8 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 					zScore(i) = postZ(i,::).max
       			}
     		}
-    		
-    		
+
+
 		} else if (dsp.rel(REL_NON_PARAPHRASE) == 1.0) {
 			for(i <- 0 until dsp.features.length) {
 				z(i)      = REL_NON_PARAPHRASE
@@ -199,7 +199,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 			println("ERROR: MultiP.inferHidden - label missing ")
 		}
 
-    	
+
 		if(Constants.DEBUG) {
 			println("constrained result.z=" + z.toList.map((r) => data.relVocab(r)))
 		}
@@ -209,7 +209,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		if(Constants.TIMING) {
 			Utils.Timer.stop("inferHidden")
 		}
-		
+
 		result
 	}
 
@@ -225,7 +225,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		if(Constants.TIMING) {
 			Utils.Timer.start("inferAll")
 		}
-	
+
 		val z      = DenseVector.zeros[Int](dsp.features.length)
 		val postZ  = new Array[SparseVector[Double]](dsp.features.length)
 		val zScore = DenseVector.zeros[Double](dsp.features.length)
@@ -234,10 +234,10 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		if(useAverage) {
 			this.computeThetaAverage
 		}
-		
+
 		for(i <- 0 until dsp.features.length) {
 			if(useAverage) {
-				postZ(i) = theta_average * dsp.features(i)	
+				postZ(i) = theta_average * dsp.features(i)
 			} else {
 				postZ(i) = theta * dsp.features(i)
 			}
@@ -252,45 +252,45 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		if(Constants.DEBUG) {
 			println("unconstrained result.z=" + z.toList.map((r) => data.relVocab(r)))
 		}
-    	
+
 		val result = new VectorSentencePair(dsp, dsp.w1ids, dsp.w2ids, dsp.features, rel, z, zScore)
 
     	if(Constants.TIMING) {
       		Utils.Timer.stop("inferAll")
     	}
-    	
+
     	result
   	}
-  	
+
 
 	// The inference algorithm that compute the vector parameter z* as described in our TACL paper
-	//    z* is the parameter vector that corresponds to the most likely assignment for each word pair that respects the sentence-level training label 	
+	//    z* is the parameter vector that corresponds to the most likely assignment for each word pair that respects the sentence-level training label
   	def inferAllDebug(dsp:VectorSentencePair, useAverage:Boolean):(DenseVector[Double], DenseVector[Double]) = {
 		if(Constants.TIMING) {
 			Utils.Timer.start("inferAllDebug")
 		}
-	
+
 		val z      = DenseVector.zeros[Int](dsp.features.length)
 		val postZ  = new Array[SparseVector[Double]](dsp.features.length)
 		val zScore = DenseVector.zeros[Double](dsp.features.length)
 		val zYesScore =  DenseVector.zeros[Double](dsp.features.length)
 		val zNoScore =  DenseVector.zeros[Double](dsp.features.length)
-		
+
 		val rel    = DenseVector.zeros[Double](data.nRel).t
 
 		if(useAverage) {
 			this.computeThetaAverage
 		}
-		
-		
+
+
 		for(i <- 0 until dsp.features.length) {
 			if(useAverage) {
-				postZ(i) = theta_average * dsp.features(i)	
+				postZ(i) = theta_average * dsp.features(i)
 			} else {
 				postZ(i) = theta * dsp.features(i)
 			}
-			
-			zNoScore(i) = postZ(i)(0)   
+
+			zNoScore(i) = postZ(i)(0)
 			zYesScore(i) = postZ(i)(1)
 
 			val logExpSum = MathUtils.LogExpSum(List(zNoScore(i), zYesScore(i)).toArray)
@@ -311,9 +311,8 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
     	if(Constants.TIMING) {
       		Utils.Timer.stop("inferAll")
     	}
-    	
+
     	return (zYesScore, zNoScore)
-    	
+
   	}
 }
-
