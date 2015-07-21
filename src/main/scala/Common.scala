@@ -74,10 +74,10 @@ object StringUtils {
     str.substring(0, str.lastIndexOf("\n"))
   }
 
-  /** 
+  /**
    * stripWS
    * Strips leading/trailing whitespace
-   */ 
+   */
   def stripWS(str:String) : String = {
     str.replaceFirst("""^\s+""", "").replaceFirst("""[\s\n]+$""", "")
   }
@@ -102,7 +102,7 @@ object MathUtils {
   def Sample(d:Array[Double]):Int = {
     var sum = 0.0
     val target = rnd.nextDouble * d.sum.toDouble
-    
+
     for(i <- 0 to d.length-1) {
       sum += d(i)
       if(sum > target) {
@@ -177,6 +177,6 @@ object MathUtils {
       return 0.0;
     } else {
       return log(alpha + n) + LogFactorial(n-1);
-    }    
+    }
   }
 }
