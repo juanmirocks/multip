@@ -9,9 +9,7 @@ import java.util.regex.Pattern
 
 import edu.washington.cs.knowitall.morpha._
 
-import scalala.tensor.dense._;
-import scalala.tensor.sparse._;
-
+import breeze.linalg._
 
 /** Class RawWordPair:
  *    a class that extracts features for a word pair (iword1 and iword2) of sentence pair (rawspair)

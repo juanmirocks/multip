@@ -6,17 +6,7 @@ import java.io._
 
 import math.abs
 
-import scalala.scalar._;
-import scalala.tensor.::;
-import scalala.tensor.mutable._;
-import scalala.tensor.dense._;
-import scalala.tensor.sparse._;
-import scalala.library.Library._;
-import scalala.library.LinearAlgebra._;
-import scalala.library.Statistics._;
-import scalala.library.Plotting._;
-import scalala.operators.Implicits._;
-
+import breeze.linalg._
 
 // There will be one vector parameter (and one parameter for each unique feature) used in the entire MultiP model
 // MultiP uses online learning technique, that the parameters would be updated (if needed to be updated) for each single training example. 
