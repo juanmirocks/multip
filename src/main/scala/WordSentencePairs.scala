@@ -380,8 +380,8 @@ abstract class SuperVectorSentencePair  {
 
 	var w1ids:Array[Int] = null
 	var w2ids:Array[Int] = null
-	var features:Array[SparseVectorCol[Double]] = null
-	var rel:DenseVectorRow[Double] = DenseVector.zeros[Double](nRel).t
+	var features:Array[SparseVector[Double]] = null
+	var rel:Transpose[DenseVector[Double]] = DenseVector.zeros[Double](nRel).t
 	var z:DenseVector[Int] = null // Though it is Int, but only will have two possible values 0 or 1
 	var zScore:DenseVector[Double] = null
 
@@ -402,7 +402,7 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 	}
 
 
-	def this (rawsentpair:RawSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVectorCol[Double]], useExpert:Boolean) {
+	def this (rawsentpair:RawSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVector[Double]], useExpert:Boolean) {
 		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.amtjudge, rawsentpair.expertjudge)
 
 		this.w1ids = w1ids
@@ -423,7 +423,7 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 	}
 
 
-	def this (vsentpair:VectorSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVectorCol[Double]], rel:DenseVectorRow[Double], z:DenseVector[Int], zScore:DenseVector[Double]) {
+	def this (vsentpair:VectorSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVector[Double]], rel:Transpose[DenseVector[Double]], z:DenseVector[Int], zScore:DenseVector[Double]) {
 		this(vsentpair.trendid, vsentpair.trendname, vsentpair.origsent, vsentpair.candsent, vsentpair.amtjudge, vsentpair.expertjudge)
 
 
@@ -584,7 +584,7 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 		for (rspair <- rspairs) {
 			val w1s = new Array[Int](rspair.rawwordpairs.length)
 			val w2s = new Array[Int](rspair.rawwordpairs.length)
-			val swfeatures = new Array[SparseVectorCol[Double]](rspair.rawwordpairs.length)
+			val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
 
 			for(i <- 0 until rspair.rawwordpairs.length) {
 				val wpair:RawWordPair = rspair.rawwordpairs(i)
