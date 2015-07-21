@@ -8,8 +8,10 @@ import java.io.FileWriter
 import scala.util.Random
 
 object Utils {
+  @deprecated("0.2", "Not needed and uses deprecated 2.10 class")
   def deepCopy[A](a: A)(implicit m: reflect.Manifest[A]): A =
-    util.Marshal.load[A](util.Marshal.dump(a))
+    ???
+    //util.Marshal.load[A](util.Marshal.dump(a))
 
   def count[A](xs:List[A]): HashMap[A,Int] = {
     val result = new HashMap[A,Int]()
