@@ -201,7 +201,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 
 
 		if(Constants.DEBUG) {
-			println("constrained result.z=" + z.toList.map((r) => data.relVocab(r)))
+			println("constrained result.z=" + z.map((r) => data.relVocab(r)))
 		}
 
 		val result = new VectorSentencePair(dsp, dsp.w1ids, dsp.w2ids, dsp.features, dsp.rel, z, zScore)
@@ -250,7 +250,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		}
 
 		if(Constants.DEBUG) {
-			println("unconstrained result.z=" + z.toList.map((r) => data.relVocab(r)))
+			println("unconstrained result.z=" + z.map((r) => data.relVocab(r)))
 		}
 
 		val result = new VectorSentencePair(dsp, dsp.w1ids, dsp.w2ids, dsp.features, rel, z, zScore)
