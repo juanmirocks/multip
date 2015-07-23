@@ -305,7 +305,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		}
 
 		if(Constants.DEBUG) {
-			println("unconstrained result.z=" + z.toList.map((r) => data.relVocab(r)))
+			println("unconstrained result.z=" + z.map((r) => data.relVocab(r)))
 		}
 
     	if(Constants.TIMING) {
