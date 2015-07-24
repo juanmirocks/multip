@@ -36,11 +36,7 @@ object WordSig {
 	
 	def getWordSiginTrend(word:String, trendid:String): Double = {
 		val keyword = trendid + "\t" + word
-		if (sigDict.contains(keyword) ){
-			return sigDict(keyword)
-		} 
-		
-		return -1.0	
+		sigDict.getOrElse(keyword, -1.0)
 	}
 
 }
