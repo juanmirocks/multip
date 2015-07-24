@@ -417,9 +417,9 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 		}
 
 		if (judge == Some(true)) {
-			this.rel(IS_PARAPHRASE) = 1.0
+			this.rel.t(IS_PARAPHRASE) = 1.0
 		} else {
-			this.rel(IS_NOT_PARAPHRASE) = 1.0
+			this.rel.t(IS_NOT_PARAPHRASE) = 1.0
 		}
 	}
 
