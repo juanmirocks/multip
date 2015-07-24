@@ -7,6 +7,7 @@ import java.io._
 import math.abs
 
 import breeze.linalg._
+import breeze.math._
 import breeze.numerics._
 
 // There will be one vector parameter (and one parameter for each unique feature) used in the entire MultiP model
