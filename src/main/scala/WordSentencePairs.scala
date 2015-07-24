@@ -10,6 +10,7 @@ import java.util.regex.Pattern
 import edu.washington.cs.knowitall.morpha._
 
 import breeze.linalg._
+import breeze.numerics._
 
 /** Class RawWordPair:
  *    a class that extracts features for a word pair (iword1 and iword2) of sentence pair (rawspair)

@@ -7,6 +7,7 @@ import java.io._
 import math.abs
 
 import breeze.linalg._
+import breeze.numerics._
 
 // There will be one vector parameter (and one parameter for each unique feature) used in the entire MultiP model
 // MultiP uses online learning technique, that the parameters would be updated (if needed to be updated) for each single training example.
