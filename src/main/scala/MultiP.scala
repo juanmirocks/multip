@@ -163,7 +163,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 			postZ(i,::) := (theta * dsp.features(i)).toDenseVector
 
 			//normalize (note: this isn't necessary, except for analysis purposes and generating P/R curve on training data)
-			val logExpSum = MathUtils.LogExpSum(postZ(i,::).toArray)
+			val logExpSum = MathUtils.LogExpSum(postZ(i,::).t.toArray)
 			postZ(i,::) -= logExpSum
 		}
 		dsp.postZ = postZ
@@ -185,8 +185,8 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 					zScore(i) = topscore
 				} else {
 
-					z(i)      = postZ(i,::).argmax
-					zScore(i) = postZ(i,::).max
+					z(i)      = postZ(i,::).t.argmax
+					zScore(i) = postZ(i,::).t.max
       			}
     		}
 
@@ -247,7 +247,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 			zScore(i) = postZ(i).max
 
 			//Set the aggregate variables
-			rel(z(i)) = 1.0
+			rel.t(z(i)) = 1.0
 		}
 
 		if(Constants.DEBUG) {
@@ -302,7 +302,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 			zScore(i) = postZ(i).max
 
 			//Set the aggregate variables
-			rel(z(i)) = 1.0
+			rel.t(z(i)) = 1.0
 		}
 
 		if(Constants.DEBUG) {
