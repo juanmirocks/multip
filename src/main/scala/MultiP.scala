@@ -104,11 +104,11 @@ abstract class Parameters(val data:SentPairsData) {
     	//Update le weights
     	for(m <- 0 until iAll.features.length) {
       		if(iAll.z(m) != iHidden.z(m)) {
-				theta(iHidden.z(m),::)     :+= iHidden.features(m)
-				theta(iAll.z(m),   ::)     :-= iAll.features(m)
+				theta(iHidden.z(m),::).t     :+= iHidden.features(m)
+				theta(iAll.z(m),   ::).t     :-= iAll.features(m)
 
-				theta_sum(iHidden.z(m),::) :+= (nUpdates :* iHidden.features(m))
-				theta_sum(iAll.z(m),   ::) :-= (nUpdates :* iAll.features(m))
+				theta_sum(iHidden.z(m),::).t :+= (iHidden.features(m) :* nUpdates)
+				theta_sum(iAll.z(m),   ::).t :-= (iAll.features(m) :* nUpdates)
 			}
 		}
 
