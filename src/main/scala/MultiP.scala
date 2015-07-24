@@ -161,7 +161,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 
 		//First pre-compute postZ
 		for(i <- 0 until dsp.features.length) {
-			postZ(i,::) := (theta * dsp.features(i)).toDenseVector
+			postZ(i,::).t := (theta * dsp.features(i)).toDenseVector
 
 			//normalize (note: this isn't necessary, except for analysis purposes and generating P/R curve on training data)
 			val logExpSum = MathUtils.LogExpSum(postZ(i,::).t.toArray)
