@@ -229,7 +229,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		}
 
 		val z      = DenseVector.zeros[Int](dsp.features.length)
-		val postZ  = new Array[SparseVector[Double]](dsp.features.length)
+		val postZ  = new Array[DenseVector[Double]](dsp.features.length)
 		val zScore = DenseVector.zeros[Double](dsp.features.length)
 		val rel    = DenseVector.zeros[Double](data.nRel).t
 
@@ -273,7 +273,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		}
 
 		val z      = DenseVector.zeros[Int](dsp.features.length)
-		val postZ  = new Array[SparseVector[Double]](dsp.features.length)
+		val postZ  = new Array[DenseVector[Double]](dsp.features.length)
 		val zScore = DenseVector.zeros[Double](dsp.features.length)
 		val zYesScore =  DenseVector.zeros[Double](dsp.features.length)
 		val zNoScore =  DenseVector.zeros[Double](dsp.features.length)
