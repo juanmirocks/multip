@@ -5,12 +5,12 @@ import scala.io.Source
 import scala.collection.immutable.HashMap
 
 object WordSig {
-	
-	
+
+
 	var tmpSigDict = new HashMap[String, Double]()
-	
+
 	val sigFile = "./data/trends.train.wordsig"
-	
+
 	for(line <- Source.fromFile(sigFile).getLines()) {
 		val cols = line.trim().split('\t')
 		if (cols.length == 4) {
@@ -21,7 +21,7 @@ object WordSig {
 	}
 
 	val sigFile2 = "./data/trends.test.wordsig"
-	
+
 	for(line <- Source.fromFile(sigFile2).getLines()) {
 		val cols = line.trim().split('\t')
 		if (cols.length == 4) {
@@ -31,14 +31,12 @@ object WordSig {
 			tmpSigDict += (keyword -> wordsig)
 		}
 	}
-	val sigDict = tmpSigDict	
+	val sigDict = tmpSigDict
 
-	
+
 	def getWordSiginTrend(word:String, trendid:String): Double = {
 		val keyword = trendid + "\t" + word
 		sigDict.getOrElse(keyword, -1.0)
 	}
 
 }
-
-
