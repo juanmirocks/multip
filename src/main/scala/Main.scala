@@ -18,6 +18,7 @@ object Main extends App {
 
   //number of iterations. normally set to 30 or 50 for a full run. And something like 1 or 5 for debugging.
   val nIter = if (args.size > 1) args(0).toInt else 50
+  val runTests = if (args.size > 2) args.tail.toSet else Set("2", "3")
 
   // read in training data, then test data.
   // the order matters, since test data has to create the features that exist in
@@ -64,10 +65,9 @@ object Main extends App {
 
 
     ///  Testing #0   showing the weights of each feature   ///
-
-    model.printTheta
-
-
+    if (runTests.contains("0")) {
+      model.printTheta
+    }
 
     ///  Testing #1   showing the model outputs for each input test sentence pair   ///
 
@@ -106,14 +106,16 @@ object Main extends App {
         totalgoldpos += 1.0
       }
 
+      if (runTests.contains("1")) {
+        if (prediction == 1.0) {
+          print("SYS = YESPARA | " )
+        } else {
+          print("SYS = NOTPARA | " )
+        }
 
-      if (prediction == 1.0) {
-        print("SYS = YESPARA | " )
-      } else {
-        print("SYS = NOTPARA | " )
+
+        print(datapoint.toString)
       }
-
-      print(datapoint.toString)
 
       //for (k <- 0 until OUTPUT_TOP_PHRASE_PAIR) {
       for (k <- 0 until datapoint.features.length) {
@@ -132,102 +134,106 @@ object Main extends App {
       }
 
       sysoutputs += ( datapoint -> score)
-      println(output)
+      if (runTests.contains("1")) {
+        println(output)
+      }
 
       sysscores += score
 
     }
 
     ///  Testing #2   showing the system outputs in SemEval 2015 PIT shared task format   ///
-
-    val dff = new java.text.DecimalFormat("0.0000", new java.text.DecimalFormatSymbols(java.util.Locale.ENGLISH))
-    val sysscorearray = sysscores.toArray
-    for (j <- 0 until datadata.data.length) {
-      val sysscore = sysscorearray(j)
-      val datapoint:VectorSentencePair = datadata.data(j)
-      if (sysscore > 0.0001d) {
-        println("true\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
-      } else {
-        println("false\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
+    if (runTests.contains("2")) {
+      val dff = new java.text.DecimalFormat("0.0000", new java.text.DecimalFormatSymbols(java.util.Locale.ENGLISH))
+      val sysscorearray = sysscores.toArray
+      for (j <- 0 until datadata.data.length) {
+        val sysscore = sysscorearray(j)
+        val datapoint:VectorSentencePair = datadata.data(j)
+        if (sysscore > 0.0001d) {
+          println("true\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
+        } else {
+          println("false\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
+        }
       }
     }
 
 
     ///  Testing #3   model performance aggregated on the test dataset   ///
     ///               showing Precision/Recall curve, and max F1 point, and PINC scores etc  ///
+    if (runTests.contains("3")) {
+
+      // PRINT PR Curve with PINC score
+      var tp = 0.0
+      var fp = 0.0
+      var tn = 0.0
+      var fn = 0.0
+      var totalpinc = 0.0
 
 
-    // PRINT PR Curve with PINC score
-    var tp = 0.0
-    var fp = 0.0
-    var tn = 0.0
-    var fn = 0.0
-    var totalpinc = 0.0
+
+      println("size of test data (count only unique) = " + sysoutputs.toList.length)
+      println( "RANK\t\tPRECIS.\tRECALL\tF1\tHIT-PINC|||\tPINC\tMultiP\tSENT1\tSENT2")
+
+      val sortedoutoputs = ListMap(sysoutputs.toList.sortBy{-_._2}:_*)
+      var i = 0
+
+      var maxfscore = 0.0
+      var maxfoutput = ""
+
+      val df = new java.text.DecimalFormat("#.###")
+
+      for ((paradata, parascore) <- sortedoutoputs) {
+
+        var strhit = "HIT"
+
+        val sent1 = paradata.origsent
+        val sent2 = paradata.candsent
+
+        if (sent1 != sent2) {
+          i += 1
 
 
-
-    println("size of test data (count only unique) = " + sysoutputs.toList.length)
-    println( "RANK\t\tPRECIS.\tRECALL\tF1\tHIT-PINC|||\tPINC\tMultiP\tSENT1\tSENT2")
-
-    val sortedoutoputs = ListMap(sysoutputs.toList.sortBy{-_._2}:_*)
-    var i = 0
-
-    var maxfscore = 0.0
-    var maxfoutput = ""
-
-    val df = new java.text.DecimalFormat("#.###")
-
-    for ((paradata, parascore) <- sortedoutoputs) {
-
-      var strhit = "HIT"
-
-      val sent1 = paradata.origsent
-      val sent2 = paradata.candsent
-
-      if (sent1 != sent2) {
-        i += 1
+          val predicted = model.inferAll(paradata, useAveragedParameters)
+          val prediction = predicted.rel(model.data.IS_PARAPHRASE)
 
 
-        val predicted = model.inferAll(paradata, useAveragedParameters)
-        val prediction = predicted.rel(model.data.IS_PARAPHRASE)
+          val goldlabel = if(againstexpertlabel) paradata.expertjudge.getOrElse(false) else paradata.amtjudge.getOrElse(false)
+
+          val pincscore = PINC.getRawScore(sent1, sent2)
+
+          if (goldlabel == true) {
+            tp += 1
+            totalpinc += pincscore
+          } else {
+            fp += 1
+            strhit = "ERR"
+          }
 
 
-        val goldlabel = if(againstexpertlabel) paradata.expertjudge.getOrElse(false) else paradata.amtjudge.getOrElse(false)
+          val precision = tp / (tp + fp)
+          val recall = tp / totalgoldpos
+          val fscore = 2 * precision * recall / (precision + recall)
 
-        val pincscore = PINC.getRawScore(sent1, sent2)
+          val avgpinc = totalpinc / tp
 
-        if (goldlabel == true) {
-          tp += 1
-          totalpinc += pincscore
-        } else {
-          fp += 1
-          strhit = "ERR"
+          var output = i + "\t" + strhit + "\t" + df.format(precision) + "\t" + df.format(recall) + "\t" + df.format(fscore) + "\t" + df.format(avgpinc) + "\t|||\t"
+          output += df.format(pincscore) + "\t"+ df.format(parascore) + "\t" + sent1 + "\t" + sent2
+          println(output)
+
+          if (fscore > maxfscore) {
+            maxfscore  = fscore
+            maxfoutput = output
+          }
+
         }
 
-
-        val precision = tp / (tp + fp)
-        val recall = tp / totalgoldpos
-        val fscore = 2 * precision * recall / (precision + recall)
-
-        val avgpinc = totalpinc / tp
-
-        var output = i + "\t" + strhit + "\t" + df.format(precision) + "\t" + df.format(recall) + "\t" + df.format(fscore) + "\t" + df.format(avgpinc) + "\t|||\t"
-        output += df.format(pincscore) + "\t"+ df.format(parascore) + "\t" + sent1 + "\t" + sent2
-        println(output)
-
-        if (fscore > maxfscore) {
-          maxfscore  = fscore
-          maxfoutput = output
-        }
 
       }
 
+      println()
+      println ("MAX" + maxfoutput)
 
     }
-
-    println()
-    println ("MAX" + maxfoutput)
-
   }
 
 
