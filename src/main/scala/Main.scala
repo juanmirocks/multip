@@ -146,15 +146,15 @@ object Main extends App {
 
  		///  Testing #2   showing the system outputs in SemEval 2015 PIT shared task format   ///
 
-    	val dff = new java.text.DecimalFormat("#.####")
+    	val dff = new java.text.DecimalFormat("0.0000", new java.text.DecimalFormatSymbols(java.util.Locale.ENGLISH))
     	val sysscorearray = sysscores.toArray
     	for (j <- 0 until datadata.data.length) {
     		val sysscore = sysscorearray(j)
     		val datapoint:VectorSentencePair = datadata.data(j)
     		if (sysscore > 0.0001d) {
-    			println("true\t" + dff.format(sysscore) + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
+    			println("true\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
     		} else {
-    			println("false\t" + dff.format(sysscore) + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
+    			println("false\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
     		}
     	}
 
