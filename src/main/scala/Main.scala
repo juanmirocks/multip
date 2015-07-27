@@ -17,8 +17,8 @@ object Constants {
 object Main extends App {
 
   //number of iterations. normally set to 30 or 50 for a full run. And something like 1 or 5 for debugging.
-  val nIter = if (args.size > 1) args(0).toInt else 50
-  val runTests = if (args.size > 2) args.tail.toSet else Set("2", "3")
+  val nIter = if (args.size > 0) args(0).toInt else 50
+  val runTests = if (args.size > 1) args.tail.toSet else Set[String]()
 
   // read in training data, then test data.
   // the order matters, since test data has to create the features that exist in
