@@ -43,9 +43,7 @@ object Main extends App {
   def EvalIterations(model:Parameters, nIter:Int, test:SentPairsData, againstexpertlabel:Boolean) {
 
     ///  Training  ///
-
     for(i <- 0 to nIter) {
-
       println("****************** iteration " + i + "******************")
 
       model.train(1, null)
@@ -59,8 +57,6 @@ object Main extends App {
       //Test on the test dataset
       println("Evaluate on the test data:")
       Eval.AggregateEval(model, test)
-
-
     }
 
 
