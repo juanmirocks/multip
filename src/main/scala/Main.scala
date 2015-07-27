@@ -14,19 +14,14 @@ object Constants {
   var TIMING = true
 }
 
-object Main {
+object Main extends App {
 
-	// THE entrance function
-	def main(args: Array[String]) {
-	
-		runMultiP()
-		
-	}
+  //number of iterations. normally set to 30 or 50 for a full run. And something like 1 or 5 for debugging.
+  val nIter = if (args.size > 1) args(0).toInt else 50
 
-	
+  runMultiP()
+
 	def runMultiP() {
-		//number of iterations. normally set to 30 or 50 for a full run. And something like 1 or 5 for debugging. 
-		val nIter = 50
 
 		// read in training data, then test data. 
 		// the order matters, since test data has to create the features that exist in 
