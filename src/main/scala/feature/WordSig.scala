@@ -25,7 +25,7 @@ object WordSig {
 	for(line <- Source.fromFile(sigFile2).getLines()) {
 		val cols = line.trim().split('\t')
 		if (cols.length == 4) {
-		    val trendid = cols(0).toInt - 1
+			val trendid = cols(0).toInt - 1
 			val keyword = "train" + trendid.toString + "\t" + cols(2)
 			val wordsig = cols(3).toDouble
 			tmpSigDict += (keyword -> wordsig)
