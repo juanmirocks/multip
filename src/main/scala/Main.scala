@@ -19,29 +19,28 @@ object Main extends App {
   //number of iterations. normally set to 30 or 50 for a full run. And something like 1 or 5 for debugging.
   val nIter = if (args.size > 1) args(0).toInt else 50
 
-  runMultiP()
+  // read in training data, then test data.
+  // the order matters, since test data has to create the features that exist in
+  // the training data and use the same mapping to convert features into vector representations.
+  val trainlabel = false // false - use Turker's label; true - use expert's label
 
-	def runMultiP() {
+  val trainfile = "./data/train.labeled.data"
+  val traindata = new SentPairsData(trainfile, trainlabel, null)
+  println("size of train data = " + traindata.data.length)
 
-		// read in training data, then test data.
-		// the order matters, since test data has to create the features that exist in
-		// the training data and use the same mapping to convert features into vector representations.
-		val trainlabel = false // false - use Turker's label; true - use expert's label
+  val testlabel = true // false - use Turker's label; true - use expert's label
+  val testfile = "./data/test.labeled.data"
+  val testdata = new SentPairsData(testfile, testlabel, traindata)
+  println("size of test data = " + testdata.data.length)
 
-		val trainfile = "./data/train.labeled.data"
-		val traindata = new SentPairsData(trainfile, trainlabel, null)
-		println("size of train data = " + traindata.data.length)
+  // build the MultiP (Multiple-instances Learning Paraphrase Model)
+  val multip = new MultiP(traindata)
+  EvalIterations(multip, nIter, testdata, testlabel)
 
-		val testlabel = true // false - use Turker's label; true - use expert's label
-		val testfile = "./data/test.labeled.data"
-		val testdata = new SentPairsData(testfile, testlabel, traindata)
-		println("size of test data = " + testdata.data.length)
 
-		// build the MultiP (Multiple-instances Learning Paraphrase Model)
-		val multip = new MultiP(traindata)
-		EvalIterations(multip, nIter, testdata, testlabel)
+  // The main process for training and testing the MultiP model
+  def EvalIterations(model:Parameters, nIter:Int, test:SentPairsData, againstexpertlabel:Boolean) {
 
-	}
 
 
 	// The main process for training and testing the MultiP model
