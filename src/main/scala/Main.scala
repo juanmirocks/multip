@@ -149,7 +149,12 @@ object Main extends App {
       for (j <- 0 until datadata.data.length) {
         val sysscore = sysscorearray(j)
         val datapoint:VectorSentencePair = datadata.data(j)
-        if (sysscore > 0.0001d) {
+
+        val predicted = model.inferAll(datapoint, useAveragedParameters)
+        val goldlabel = if(againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
+        val isParaphrase = predicted.rel(model.data.IS_PARAPHRASE) == 1.0 // sysscore > 0.0001d (original code had this but was likely a bug)
+
+        if (isParaphrase) {
           println("true\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
         } else {
           println("false\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
