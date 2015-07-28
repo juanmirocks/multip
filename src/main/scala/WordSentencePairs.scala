@@ -508,7 +508,6 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 		//First pass: Read In the original annotation file one line at each time (one sentence pair per line)
 		var nLines = 0
 		for(line <- Source.fromFile(inFile).getLines()) {
-
 			nLines += 1
 			if(nLines % 1000 == 0) {
 				println("    read " + nLines + " lines")
@@ -516,8 +515,6 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 
 			val cols = line.toLowerCase().trim().split('\t')
 			var rsentpair:RawSentencePair = null
-
-
 
 			//Read In one sentence pair from original annotation file
 			if (usePOS) {
@@ -542,8 +539,6 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 						rsentpair = new RawSentencePair("test"+cols(0), cols(1), cols(6), cols(7), cols(4), cols(5))
 					}
 				}
-
-
 			}
 
 			//Extract phrase pairs and their features for this sentence pair
@@ -563,7 +558,6 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 				}
 
 			}
-
 		}
 
 		//Go over rawfeaturecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
@@ -587,27 +581,25 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 			val w2s = new Array[Int](rspair.rawwordpairs.length)
 			val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
 
-			for(i <- 0 until rspair.rawwordpairs.length) {
+			for (i <- 0 until rspair.rawwordpairs.length) {
 				val wpair:RawWordPair = rspair.rawwordpairs(i)
 				w1s(i) = this.wordVocab(rspair.rawwordpairs(i).word1)
 				w2s(i) = this.wordVocab(rspair.rawwordpairs(i).word2)
 
 				swfeatures(i) = SparseVector.zeros[Double](this.featureVocab.size + 1)
-      			swfeatures(i)(this.featureVocab.size) = 1.0	//Bias feature
+				swfeatures(i)(this.featureVocab.size) = 1.0	//Bias feature
 
-      			for(j <- 0 until wpair.rawfeatures.length) {
+				for(j <- 0 until wpair.rawfeatures.length) {
 					val f = this.featureVocab(wpair.rawfeatures(j))
 					//println(f + " " + ppair.rawfeatures(j))
 					if(f >= 0) {
-	  					swfeatures(i)(f) = 1.0
-	  				}
-	  			}
+						swfeatures(i)(f) = 1.0
+					}
+				}
 			}
 
 			this.data(this.nSentPairs) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
 			this.nSentPairs += 1
-
-
 		}
 	}
 
