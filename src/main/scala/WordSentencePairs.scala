@@ -172,7 +172,7 @@ abstract class SuperRawSentencePair  {
 }
 
 
-/** Class SentPairsData:
+/** Class RawSentencePair:
  *    A data structure describe a sentence pair with all original information in String
  *    format that is used to read-in original data from (text format) annotation file and
  *    then covert to features into class SentPairsData.
@@ -397,11 +397,9 @@ abstract class SuperVectorSentencePair  {
  */
 class VectorSentencePair (val trendid:String, val trendname:String, val origsent:String, val candsent:String, val amtjudge:Option[Boolean], val expertjudge:Option[Boolean]) extends SuperVectorSentencePair {
 
-
 	def this (rawsentpair:RawSentencePair) {
 		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.amtjudge, rawsentpair.expertjudge)
 	}
-
 
 	def this (rawsentpair:RawSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVector[Double]], useExpert:Boolean) {
 		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.amtjudge, rawsentpair.expertjudge)
@@ -423,10 +421,8 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 		}
 	}
 
-
 	def this (vsentpair:VectorSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVector[Double]], rel:Transpose[DenseVector[Double]], z:DenseVector[Int], zScore:DenseVector[Double]) {
 		this(vsentpair.trendid, vsentpair.trendname, vsentpair.origsent, vsentpair.candsent, vsentpair.amtjudge, vsentpair.expertjudge)
-
 
 		this.w1ids = w1ids
 		this.w2ids = w2ids
@@ -434,7 +430,6 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 		this.rel = rel
 		this.z = z
 		this.zScore = zScore
-
 	}
 
 
@@ -489,15 +484,11 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 
 	def readinFromAnnotationFile (inFile:String, useExpert:Boolean, trainData:SentPairsData) {
 
-
 		this.sentVocab = new Vocab
 		this.wordVocab = new Vocab
-
-		if (trainData == null) {
-			this.featureVocab = new Vocab
-		} else {
-			this.featureVocab = trainData.featureVocab
-		}
+		this.featureVocab =
+			if (trainData == null) new Vocab
+			else trainData.featureVocab
 
 		var rawsentpairs = new ArrayBuffer[RawSentencePair]()
 		var rawfeaturecounter = Map.empty[String,Int]
@@ -556,7 +547,6 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 					val w1 = this.wordVocab(rwpair.word1)
 					val w2 = this.wordVocab(rwpair.word2)
 				}
-
 			}
 		}
 
