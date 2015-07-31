@@ -9,12 +9,12 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze" % "0.11.2",
   "org.scalanlp" %% "breeze-natives" % "0.11.2",
-  "org.scalanlp" %% "breeze-viz" % "0.11.2",
   //
   "org.clapper" %% "argot" % "1.0.3",
   "org.apache.commons" % "commons-math3" % "3.2",
   //
-  "org.scalacheck" %% "scalacheck" % "1.12.4" % "test"
+  "org.scalacheck" %% "scalacheck" % "1.12.4" % "test",
+   "org.scalatest" %% "scalatest" % "3.0.0-SNAP5" % "test"
 )
 
 resolvers ++= Seq(

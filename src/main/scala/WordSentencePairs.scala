@@ -223,19 +223,19 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 	val origsent = ocasewords.mkString(" ")
 	val candsent = ccasewords.mkString(" ")
 
-	def readTokens(tmptags: Array[String], tmpwords: Array[String], tmpposs: Array[String]) = {
+	def readTokens(tmpwords: Array[String], tmpposs: Array[String]) = {
 		var words_buffer = new ArrayBuffer[String]()
 		var poss_buffer = new ArrayBuffer[String]()
 
 		var index = 0
 		var retMatched = false
-		while (index < tmptags.length) {
+		while (index < tmpwords.length) {
 			var i = 0
 			var matched = false
 			if (tmpwords(index+i) == trendnamewords(i)) {
 				matched = true
 				i += 1
-				while (matched && index + i < tmptags.length && i < trendnamewords.length) {
+				while (matched && index + i < tmpwords.length && i < trendnamewords.length) {
 					if (tmpwords(index+i) != trendnamewords(i)) {
 						matched = false
 					}
@@ -257,18 +257,12 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 		(retMatched, words_buffer.toArray, poss_buffer.toArray)
 	}
 
-	val (omatched, owords, oposs) = readTokens(otmptags, otmpwords, otmpposs)
-	val (cmatched, cwords, cposs) = readTokens(ctmptags, ctmpwords, ctmpposs)
+	val (omatched, owords, oposs) = readTokens(otmpwords, otmpposs)
+	val (cmatched, cwords, cposs) = readTokens(ctmpwords, ctmpposs)
 
 	val followsig = WordSig.getWordSiginTrend("follow", this.trendid)
 
-	var tmpvalid = false
-	if (omatched == true && cmatched == true && origsent != candsent && followsig <= 50000.0) {
-		tmpvalid = true
-	}
-
-	val valid = tmpvalid
-
+	val valid = (omatched == true && cmatched == true && origsent != candsent && followsig <= 50000.0)
 
 	val ostems = owords map {MorphaStemmer.stemToken(_)}
 	val cstems = cwords map {MorphaStemmer.stemToken(_)}
@@ -314,8 +308,7 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 		return wordpairs_buffer.toArray
 	}
 
-
-	override def toString() :String = {
+	override def toString(): String = {
 		var output = this.amtjudge + " | " + this.trendname + " | " + this.origsent + " | " + this.candsent + "\n"
 		output += this.owords.mkString(" ") + " | " + this.ostems.mkString(" ") + " | " + this.oposs.mkString(" ") + "\n"
 		output += this.cwords.mkString(" ") + " | " + this.cstems.mkString(" ") + " | " + this.cposs.mkString(" ")
