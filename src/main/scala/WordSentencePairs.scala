@@ -261,16 +261,18 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 		var index = 0
 		var retMatched = false
 		while (index < tmpwords.length) {
-			var i = 0
 			var matched = false
-			if (tmpwords(index+i) == trendnamewords(i)) {
-				matched = true
-				i += 1
-				while (matched && index + i < tmpwords.length && i < trendnamewords.length) {
-					if (tmpwords(index+i) != trendnamewords(i)) {
-						matched = false
-					}
+			if (trendnamewords.nonEmpty) {
+				var i = 0
+				if (tmpwords(index+i) == trendnamewords(i)) {
+					matched = true
 					i += 1
+					while (matched && index + i < tmpwords.length && i < trendnamewords.length) {
+						if (tmpwords(index+i) != trendnamewords(i)) {
+							matched = false
+						}
+						i += 1
+					}
 				}
 			}
 
