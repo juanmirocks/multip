@@ -171,6 +171,36 @@ abstract class SuperRawSentencePair  {
 	val valid:Boolean //both sentences match the topic names
 }
 
+object RawSentencePair {
+
+	//Possibly allow for own equal: (String, String) => Boolean = ((a, b) => a == b)
+	def findCommonSubparts(s1: Array[String], s2: Array[String], maxLength: Int = 3): Set[Array[String]] = {
+		assert(maxLength >= 1, "maxLength must be possitive")
+
+		/* Is this more efficent to compute as a variant of the Smith-Waterman algorithm ? */
+
+		def subparts(s: Array[String], size: Int, index: Int = 0, aux: Set[List[String]] = Set()): Set[List[String]] = {
+			if (index + size - 1 == s.size) aux
+			else {
+				subparts(s, size, index + 1, aux + s.slice(index, index + size).toList)
+			}
+		}
+
+    (1 to maxLength).foldLeft(Set[List[String]]()) { (ret, size) =>
+			ret ++ (subparts(s1, size) & subparts(s2, size))
+		}.map(_.toArray)
+	}
+
+	def getBestCommonSubpart(commons: Iterable[Array[String]], isFirstBetter: (Array[String], Array[String]) => Boolean = ((a, b) => (a.mkString("").length >= b.mkString("").length))): Array[String] = {
+		if (commons.isEmpty) Array()
+		else {
+			commons.tail.foldLeft(commons.head) { (prev, neu)  =>
+				if (isFirstBetter(prev, neu)) prev else neu
+			}
+		}
+	}
+
+}
 
 /** Class RawSentencePair:
 *    A data structure describe a sentence pair with all original information in String
@@ -178,6 +208,7 @@ abstract class SuperRawSentencePair  {
 *    then covert to features into class SentPairsData.
 */
 class RawSentencePair (val trendid:String, val trendname:String, val origpossent:String, val candpossent:String, amtstr:String, expertstr:String) extends SuperRawSentencePair {
+	import RawSentencePair._
 
 	// Read in amt/expert judgement scores, and convert to binary true/false judgements
 	// AMT - amazon mechanical turk labels, uses different cutoffs from EXPERT annotation
