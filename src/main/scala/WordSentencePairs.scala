@@ -220,83 +220,50 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 	val otmpposs = otmptags.map(x => x.split('/')(2))
 	val ctmpposs = ctmptags.map(x => x.split('/')(2))
 
-
 	val origsent = ocasewords.mkString(" ")
 	val candsent = ccasewords.mkString(" ")
 
-	var owords_buffer = new ArrayBuffer[String]()
-	var cwords_buffer = new ArrayBuffer[String]()
-	var oposs_buffer = new ArrayBuffer[String]()
-	var cposs_buffer = new ArrayBuffer[String]()
+	def readTokens(tmptags: Array[String], tmpwords: Array[String], tmpposs: Array[String]) = {
+		var words_buffer = new ArrayBuffer[String]()
+		var poss_buffer = new ArrayBuffer[String]()
 
-
-	var oindex = 0
-	var omatched = false
-	while (oindex < otmptags.length) {
-		var i = 0
-		var matched = false
-		if (otmpwords(oindex+i) == trendnamewords(i)) {
-			matched = true
-			i += 1
-			while ( matched && oindex + i < otmptags.length && i < trendnamewords.length) {
-				if (otmpwords(oindex+i) != trendnamewords(i)) {
-					matched = false
-				}
+		var index = 0
+		var retMatched = false
+		while (index < tmptags.length) {
+			var i = 0
+			var matched = false
+			if (tmpwords(index+i) == trendnamewords(i)) {
+				matched = true
 				i += 1
+				while (matched && index + i < tmptags.length && i < trendnamewords.length) {
+					if (tmpwords(index+i) != trendnamewords(i)) {
+						matched = false
+					}
+					i += 1
+				}
+			}
+
+			if (matched == true) {
+				retMatched = true
+				words_buffer += "XXXX"
+				poss_buffer  += "XX"
+				index += trendnamewords.length
+			} else {
+				words_buffer += tmpwords(index)
+				poss_buffer  += tmpposs(index)
+				index += 1
 			}
 		}
-
-		if (matched == true) {
-			omatched = true
-			owords_buffer += "XXXX"
-			oposs_buffer  += "XX"
-			oindex += trendnamewords.length
-		} else {
-			owords_buffer += otmpwords(oindex)
-			oposs_buffer  += otmpposs(oindex)
-			oindex += 1
-		}
+		(retMatched, words_buffer.toArray, poss_buffer.toArray)
 	}
 
-	var cindex = 0
-	var cmatched = false
-	while (cindex < ctmptags.length) {
-		var i = 0
-		var matched = false
-		if (ctmpwords(cindex+i) == trendnamewords(i)) {
-			matched = true
-			i += 1
-			while ( matched && cindex + i < ctmptags.length && i < trendnamewords.length) {
-				if (ctmpwords(cindex+i) != trendnamewords(i)) {
-					matched = false
-				}
-				i += 1
-			}
-		}
-
-		if (matched == true) {
-			cmatched = true
-			cwords_buffer += "XXXX"
-			cposs_buffer  += "XXX"
-			cindex += trendnamewords.length
-		} else {
-			cwords_buffer += ctmpwords(cindex)
-			cposs_buffer  += ctmpposs(cindex)
-			cindex += 1
-		}
-	}
+	val (omatched, owords, oposs) = readTokens(otmptags, otmpwords, otmpposs)
+	val (cmatched, cwords, cposs) = readTokens(ctmptags, ctmpwords, ctmpposs)
 
 	val followsig = WordSig.getWordSiginTrend("follow", this.trendid)
 
-
-
-	val owords = owords_buffer.toArray
-	val cwords = cwords_buffer.toArray
-	val oposs = oposs_buffer.toArray
-	val cposs = cposs_buffer.toArray
-
 	var tmpvalid = false
-	if (omatched == true && cmatched == true && origsent!=candsent && followsig <= 50000.0) {
+	if (omatched == true && cmatched == true && origsent != candsent && followsig <= 50000.0) {
 		tmpvalid = true
 	}
 
