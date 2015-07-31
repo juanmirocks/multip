@@ -509,28 +509,27 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 
 				//Read In one sentence pair from original annotation file
 				if (usePOS) {
-					if (cols.length == 7 || cols.length == 8) {
+					val isTest =
+						if (cols.length == 8) true // 8-column format: both Amazon Mechanical Turk and Expert label
+						else { assert(cols.length == 7); false } // 7-column format: only Amazon Mechanical Turk label
 
-						//class RawSentencePair (val trendid:String, val trendname:String, val origpossent:String, val candpossent:String, amtstr:String, expertstr:String)
+						// Note!! the "test" prefix before the trend it (cols(0)) is hard-coded for purpose of
+						// reading in the topic-word significance for the Topical features only.
+						// The Topical features were used in our TACL paper, and computed by an external script (not in MultiP)
+						// and saved in the data files, which are read into the MultiP.
+						// The "test" prefix is to distinguish the different trend id indices used for training and test data
 
-						if (cols.length == 7) {
-							// 7-column format: only Amazon Mechanical Turk label
-							rsentpair = new RawSentencePair(cols(0), cols(1), cols(5), cols(6), cols(4), null)
-						} else if (cols.length == 8) {
-							// 8-column format: both Amazon Mechanical Turk and Expert label
+						// If you want to remove this topical feature (also called Sig feature in the code of MultiP),
+						// you would want to modify the code of class RawWordPair in this file.
 
-							// Note!! the "test" prefix before the trend it (cols(0)) is hard-coded for purpose of
-							// reading in the topic-word significance for the Topical features only.
-							// The Topical features were used in our TACL paper, and computed by an external script (not in MultiP)
-							// and saved in the data files, which are read into the MultiP.
-							// The "test" prefix is to distinguish the different trend id indices used for training and test data
-
-							// If you want to remove this topical feature (also called Sig feature in the code of MultiP),
-							// you would want to modify the code of class RawWordPair in this file.
-							rsentpair = new RawSentencePair("test"+cols(0), cols(1), cols(6), cols(7), cols(4), cols(5))
+						rsentpair = new RawSentencePair(
+							trendid = (if (isTest) "test" else "") + cols(0),
+							trendname = cols(1),
+							origpossent = if (isTest) cols(6) else cols(5),
+							candpossent = if (isTest) cols(7) else cols(6),
+							amtstr = cols(4),
+							expertstr = if (isTest) cols(5) else null)
 						}
-					}
-				}
 
 				//Extract phrase pairs and their features for this sentence pair
 				if (rsentpair != null && (useExpert == true && rsentpair.expertjudge != None || useExpert == false && useExpert == false && rsentpair.valid == true) ) {
