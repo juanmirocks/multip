@@ -24,7 +24,6 @@ object Main extends App {
   // the order matters, since test data has to create the features that exist in
   // the training data and use the same mapping to convert features into vector representations.
   val trainlabel = false // false - use Turker's label; true - use expert's label
-
   val trainfile = "./data/train.labeled.data"
   val traindata = new SentPairsData(trainfile, trainlabel, null)
   println("size of train data = " + traindata.data.length)
