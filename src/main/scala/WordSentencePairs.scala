@@ -173,14 +173,24 @@ abstract class SuperRawSentencePair  {
 
 object RawSentencePair {
 
-	//Possibly allow for own equal: (String, String) => Boolean = ((a, b) => a == b)
-	def findCommonSubparts(s1: Array[String], s2: Array[String], maxLength: Int = 3): Set[Array[String]] = {
+	/**
+	* Find unique common subparts of defined maxLength between two sentences of words.
+	* The sentences' words can also be empty, in which case they are not considered.
+	*
+	* Examples:
+	*
+	* * [A] & [A, A] -> Set([A])
+	* * [A, B, C] & [X, B, C] -> Set([B], [C], [BC])
+	* * [A,  , C] & [X, B, C] -> Set([C])
+	*
+	*/
+	def findCommonSubparts(s1: Array[String], s2: Array[String], maxLength: Int = 2): Set[Array[String]] = {
 		assert(maxLength >= 1, "maxLength must be possitive")
+		/* Possible addition: allow for own set/string equality function */
 
 		/* Is this more efficent to compute as a variant of the Smith-Waterman algorithm ? */
-
 		def subparts(s: Array[String], size: Int, index: Int = 0, aux: Set[List[String]] = Set()): Set[List[String]] = {
-			if (index + size - 1 == s.size) aux
+			if (index + size - 1 == s.size) aux.filter(!_.exists(_.isEmpty))
 			else {
 				subparts(s, size, index + 1, aux + s.slice(index, index + size).toList)
 			}
@@ -241,7 +251,6 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 
 
 	// create words/poss/stems arrays from input sentences
-	val trendnamewords = this.trendname.replace("-","").toLowerCase().split(' ')
 	val otmptags = origpossent.split(" ")
 	val ctmptags = candpossent.split(" ")
 	val ocasewords = otmptags.map(x => x.split('/')(0))
@@ -250,6 +259,18 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 	val ctmpwords = ccasewords.map(x => x.toLowerCase())
 	val otmpposs = otmptags.map(x => x.split('/')(2))
 	val ctmpposs = ctmptags.map(x => x.split('/')(2))
+
+	def filterWordsByPos(s: Array[String], spos: Array[String]): Array[String] = {
+		var i = -1
+		s.map { w => i += 1; if (okTrendPos.contains(spos(i))) w else "" }
+	}
+
+	val trendnamewords = {
+		if (trendname.isEmpty) {
+			getBestCommonSubpart(findCommonSubparts(filterWordsByPos(otmpwords, otmpposs), filterWordsByPos(ctmpwords, ctmpposs)))
+		}
+		else trendname.replace("-","").toLowerCase().split(' ')
+	}
 
 	val origsent = ocasewords.mkString(" ")
 	val candsent = ccasewords.mkString(" ")
