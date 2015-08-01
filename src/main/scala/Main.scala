@@ -1,13 +1,15 @@
 package multip
 
 import multip.feature._
-import scala.math._
+import scala.math.exp
 
 import edu.washington.cs.knowitall.morpha._
 import scala.collection.mutable.Map
 import scala.collection.mutable.ArrayBuffer
 import collection.immutable.ListMap
 
+import breeze.linalg._
+import breeze.numerics._
 
 object Constants {
   var DEBUG = false
@@ -114,7 +116,7 @@ object Main extends App {
 
       //for (k <- 0 until OUTPUT_TOP_PHRASE_PAIR) {
       for (k <- 0 until datapoint.features.length) {
-        val top = yespairscores.argmax
+        val top = argmax(yespairscores)
 
         if (k == 0) {
           score = exp(yespairscores(top))
