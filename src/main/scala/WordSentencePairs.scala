@@ -260,6 +260,7 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 	val otmpposs = otmptags.map(x => x.split('/')(2))
 	val ctmpposs = ctmptags.map(x => x.split('/')(2))
 
+	private val okTrendPos = Set("cc", "cd", "fw", "jj", "jjs", "ls", "md", "nn", "nns", "nnp", "nnps", "prp", "sym", "vbd", "vbg", "vbn", "vbp", "vbz", "wdt", "wp", "wp$", "wrb") //best
 	def filterWordsByPos(s: Array[String], spos: Array[String]): Array[String] = {
 		var i = -1
 		s.map { w => i += 1; if (okTrendPos.contains(spos(i))) w else "" }
