@@ -547,8 +547,7 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 						}
 
 				//Extract phrase pairs and their features for this sentence pair
-				if (rsentpair != null && (useExpert == true && rsentpair.expertjudge != None || useExpert == false && useExpert == false && rsentpair.valid == true) ) {
-
+				if (rsentpair != null && rsentpair.valid == true && ((useExpert == true && rsentpair.expertjudge != None) || useExpert == false && rsentpair.amtjudge != None)) {
 					rawsentpairs += rsentpair
 
 					//Add the features (count 1 for each sent pair) that appear in this sentence pair to 'this.rawfeaturecounter'
