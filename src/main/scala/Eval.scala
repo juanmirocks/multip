@@ -5,10 +5,10 @@ import scala.util.Random;
 
 
 // This Eval(uation) object is mainly used for monitoring the performance of trained model at each iteration.
-// The final evaluation of the system performance (that reproduces the result we reported in our TACL paper) 
+// The final evaluation of the system performance (that reproduces the result we reported in our TACL paper)
 // uses the EvalIterations function in Main.scala; not this Eval object.
 object Eval {
-  
+
 
   	class Prediction(val score:Double, val correct:Boolean, val rel:String, val annotated_sentence:String) {
 		def this(score:Double, correct:Boolean) = this(score, correct, null, null)
@@ -16,41 +16,41 @@ object Eval {
 
 
 	var useAveragedParameters = false
-  
-  	// Evaluating only on binary outputs, using precision / recall / F1 
+
+  	// Evaluating only on binary outputs, using precision / recall / F1
 	def AggregateEval(param:Parameters, test:SentPairsData) {
-	
+
 		if(Constants.TIMING) {
 			Utils.Timer.start("AggregateEval")
 		}
 
 		var totalSentParaphrases = 0.0	//For computing fn
-		
+
 		var sortedPredictions = List[Prediction]()
-		for(ep <- Random.shuffle(test.data.toList)) { 
+		for(ep <- Random.shuffle(test.data.toList)) {
 			val predicted = param.inferAll(ep, useAveragedParameters)
-			
+
 			val goldlabel = ep.rel(param.data.IS_PARAPHRASE)
 			val prediction = predicted.rel(param.data.IS_PARAPHRASE)
-			
+
 			if (goldlabel == 1.0) {
 				totalSentParaphrases += 1.0
 			}
-			
-			if(goldlabel == 1.0 && prediction == 1.0) { 
+
+			if(goldlabel == 1.0 && prediction == 1.0) {
 	    		sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, true)
 			}
 			else if(goldlabel == 0.0 && prediction == 1.0) {
 				sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, false)
-			}	
-		}	
-		
+			}
+		}
+
  		println("# of sentence pairs: " + test.data.toList.length)
 		PrintPR(sortedPredictions, totalSentParaphrases)
 
 		if(Constants.TIMING) {
     		Utils.Timer.stop("AggregateEval")
-		}			
+		}
 
 	}
 
@@ -95,8 +95,8 @@ object Eval {
 				maxRf = f
 		  }
 		}
-	
-	
+
+
 		println("# of paraphrases (predicted):" + sortedPredictions.length)
 		println("P:" + maxFp + "\tR:" + maxFr + "\tF:" + maxF)
 		println("P:" + maxP  + "\tR:" + maxPr + "\tF:" + maxPf)
