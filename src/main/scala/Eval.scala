@@ -9,98 +9,94 @@ import scala.util.Random;
 // uses the EvalIterations function in Main.scala; not this Eval object.
 object Eval {
 
+  class Prediction(val score:Double, val correct:Boolean, val rel:String, val annotated_sentence:String) {
+    def this(score:Double, correct:Boolean) = this(score, correct, null, null)
+  }
 
-  	class Prediction(val score:Double, val correct:Boolean, val rel:String, val annotated_sentence:String) {
-		def this(score:Double, correct:Boolean) = this(score, correct, null, null)
-	}
+  var useAveragedParameters = false
 
+  // Evaluating only on binary outputs, using precision / recall / F1
+  def AggregateEval(param:Parameters, test:SentPairsData) {
 
-	var useAveragedParameters = false
+    if(Constants.TIMING) {
+      Utils.Timer.start("AggregateEval")
+    }
 
-  	// Evaluating only on binary outputs, using precision / recall / F1
-	def AggregateEval(param:Parameters, test:SentPairsData) {
+    var totalSentParaphrases = 0.0	//For computing fn
 
-		if(Constants.TIMING) {
-			Utils.Timer.start("AggregateEval")
-		}
+    var sortedPredictions = List[Prediction]()
+    for(ep <- Random.shuffle(test.data.toList)) {
+      val predicted = param.inferAll(ep, useAveragedParameters)
 
-		var totalSentParaphrases = 0.0	//For computing fn
+      val goldlabel = ep.rel(param.data.IS_PARAPHRASE)
+      val prediction = predicted.rel(param.data.IS_PARAPHRASE)
 
-		var sortedPredictions = List[Prediction]()
-		for(ep <- Random.shuffle(test.data.toList)) {
-			val predicted = param.inferAll(ep, useAveragedParameters)
+      if (goldlabel == 1.0) {
+        totalSentParaphrases += 1.0
+      }
 
-			val goldlabel = ep.rel(param.data.IS_PARAPHRASE)
-			val prediction = predicted.rel(param.data.IS_PARAPHRASE)
+      if(goldlabel == 1.0 && prediction == 1.0) {
+        sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, true)
+      }
+      else if(goldlabel == 0.0 && prediction == 1.0) {
+        sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, false)
+      }
+    }
 
-			if (goldlabel == 1.0) {
-				totalSentParaphrases += 1.0
-			}
+    println("# of sentence pairs: " + test.data.toList.length)
+    PrintPR(sortedPredictions, totalSentParaphrases)
 
-			if(goldlabel == 1.0 && prediction == 1.0) {
-	    		sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, true)
-			}
-			else if(goldlabel == 0.0 && prediction == 1.0) {
-				sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, false)
-			}
-		}
+    if (Constants.TIMING) {
+      Utils.Timer.stop("AggregateEval")
+    }
+  }
 
- 		println("# of sentence pairs: " + test.data.toList.length)
-		PrintPR(sortedPredictions, totalSentParaphrases)
+  //This evaluation try to use 3 different points to characterize the Precision/Recall curve:
+  //   max F1 point
+  //   max Precision point (and recall > 0.05)
+  //   max Recall point (and precision > 0.5
+  //This function is mainly used to monitor the training process, showing the model performance at each iteration
+  def PrintPR(sortedPredictions:List[Prediction], maxResults:Double) {
+    var tp, fp, fn = 0.0
 
-		if(Constants.TIMING) {
-    		Utils.Timer.stop("AggregateEval")
-		}
+    var maxF,  maxFp, maxFr = 0.0
+    var maxP,  maxPr, maxPf = 0.0
+    var maxRp, maxR,  maxRf = 0.0
+    for(prediction <- sortedPredictions.sortBy(-_.score)) {
+      if(prediction.correct) {
+        tp += 1.0
+      } else {
+        fp += 1.0
+      }
 
-	}
+      fn = maxResults - tp
+      val p = tp / (tp + fp)
+      val r = tp / (tp + fn)
+      val f = 2 * p * r / (p + r)
 
-	//This evaluation try to use 3 different points to characterize the Precision/Recall curve:
-	//   max F1 point
-	//   max Precision point (and recall > 0.05)
-	//   max Recall point (and precision > 0.5
-	//This function is mainly used to monitor the training process, showing the model performance at each iteration
-	def PrintPR(sortedPredictions:List[Prediction], maxResults:Double) {
-		var tp, fp, fn = 0.0
+      if(f > maxF) {
+        maxF  = f
+        maxFp = p
+        maxFr = r
+      }
 
-		var maxF,  maxFp, maxFr = 0.0
-		var maxP,  maxPr, maxPf = 0.0
-		var maxRp, maxR,  maxRf = 0.0
-		for(prediction <- sortedPredictions.sortBy(-_.score)) {
-		  if(prediction.correct) {
-				tp += 1.0
-		  } else {
-				fp += 1.0
-		  }
+      if(r > 0.05 && p > maxP) {
+        maxP  = p
+        maxPr = r
+        maxPf = f
+      }
 
-		  fn = maxResults - tp
-		  val p = tp / (tp + fp)
-		  val r = tp / (tp + fn)
-		  val f = 2 * p * r / (p + r)
+      if(r > maxR && p > 0.5) {
+        maxR  = r
+        maxRp = p
+        maxRf = f
+      }
+    }
 
-		  if(f > maxF) {
-				maxF  = f
-				maxFp = p
-				maxFr = r
-		  }
-
-		  if(r > 0.05 && p > maxP) {
-				maxP  = p
-				maxPr = r
-				maxPf = f
-		  }
-
-		  if(r > maxR && p > 0.5) {
-				maxR  = r
-				maxRp = p
-				maxRf = f
-		  }
-		}
-
-
-		println("# of paraphrases (predicted):" + sortedPredictions.length)
-		println("P:" + maxFp + "\tR:" + maxFr + "\tF:" + maxF)
-		println("P:" + maxP  + "\tR:" + maxPr + "\tF:" + maxPf)
-		println("P:" + maxRp + "\tR:" + maxR  + "\tF:" + maxRf)
-	  }
+    println("# of paraphrases (predicted):" + sortedPredictions.length)
+    println("P:" + maxFp + "\tR:" + maxFr + "\tF:" + maxF)
+    println("P:" + maxP  + "\tR:" + maxPr + "\tF:" + maxPf)
+    println("P:" + maxRp + "\tR:" + maxR  + "\tF:" + maxRf)
+  }
 
 }
