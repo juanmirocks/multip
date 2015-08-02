@@ -576,10 +576,9 @@ class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  
 			//Second pass:
 			this.featureVocab.lock
 
-			val rspairs = rawsentpairs.toArray
-			this.data = new Array[VectorSentencePair](rspairs.length)
+			this.data = new Array[VectorSentencePair](rawsentpairs.size)
 			this.nSentPairs = 0
-			for (rspair <- rspairs) {
+			for (rspair <- rawsentpairs) {
 				val w1s = new Array[Int](rspair.rawwordpairs.length)
 				val w2s = new Array[Int](rspair.rawwordpairs.length)
 				val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
