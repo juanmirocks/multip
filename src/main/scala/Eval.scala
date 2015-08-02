@@ -16,7 +16,7 @@ object Eval {
   var useAveragedParameters = false
 
   // Evaluating only on binary outputs, using precision / recall / F1
-  def AggregateEval(param:Parameters, test:SentPairsData) {
+  def AggregateEval(param: Parameters, eval: SentPairsData) {
 
     if(Constants.TIMING) {
       Utils.Timer.start("AggregateEval")
@@ -25,7 +25,7 @@ object Eval {
     var totalSentParaphrases = 0.0	//For computing fn
 
     var sortedPredictions = List[Prediction]()
-    for(ep <- Random.shuffle(test.data.toList)) {
+    for(ep <- Random.shuffle(eval.data.toList)) {
       val predicted = param.inferAll(ep, useAveragedParameters)
 
       val goldlabel = ep.rel(param.data.IS_PARAPHRASE)
@@ -43,7 +43,7 @@ object Eval {
       }
     }
 
-    println("# of sentence pairs: " + test.data.toList.length)
+    println("# of sentence pairs: " + eval.data.toList.length)
     PrintPR(sortedPredictions, totalSentParaphrases)
 
     if (Constants.TIMING) {
