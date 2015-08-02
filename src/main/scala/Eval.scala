@@ -18,14 +18,14 @@ object Eval {
   // Evaluating only on binary outputs, using precision / recall / F1
   def AggregateEval(param: Parameters, eval: SentPairsData) {
 
-    if(Constants.TIMING) {
+    if (Constants.TIMING) {
       Utils.Timer.start("AggregateEval")
     }
 
     var totalSentParaphrases = 0.0	//For computing fn
 
     var sortedPredictions = List[Prediction]()
-    for(ep <- Random.shuffle(eval.data.toList)) {
+    for (ep <- Random.shuffle(eval.data.toList)) {
       val predicted = param.inferAll(ep, useAveragedParameters)
 
       val goldlabel = ep.rel(param.data.IS_PARAPHRASE)
@@ -35,10 +35,10 @@ object Eval {
         totalSentParaphrases += 1.0
       }
 
-      if(goldlabel == 1.0 && prediction == 1.0) {
+      if (goldlabel == 1.0 && prediction == 1.0) {
         sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, true)
       }
-      else if(goldlabel == 0.0 && prediction == 1.0) {
+      else if (goldlabel == 0.0 && prediction == 1.0) {
         sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, false)
       }
     }
@@ -62,8 +62,8 @@ object Eval {
     var maxF,  maxFp, maxFr = 0.0
     var maxP,  maxPr, maxPf = 0.0
     var maxRp, maxR,  maxRf = 0.0
-    for(prediction <- sortedPredictions.sortBy(-_.score)) {
-      if(prediction.correct) {
+    for (prediction <- sortedPredictions.sortBy(-_.score)) {
+      if (prediction.correct) {
         tp += 1.0
       } else {
         fp += 1.0
@@ -74,19 +74,19 @@ object Eval {
       val r = tp / (tp + fn)
       val f = 2 * p * r / (p + r)
 
-      if(f > maxF) {
+      if (f > maxF) {
         maxF  = f
         maxFp = p
         maxFr = r
       }
 
-      if(r > 0.05 && p > maxP) {
+      if (r > 0.05 && p > maxP) {
         maxP  = p
         maxPr = r
         maxPf = f
       }
 
-      if(r > maxR && p > 0.5) {
+      if (r > maxR && p > 0.5) {
         maxR  = r
         maxRp = p
         maxRf = f

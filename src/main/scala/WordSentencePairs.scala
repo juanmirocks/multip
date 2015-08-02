@@ -473,7 +473,7 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 *          the feature vectors for test data will be created, using the same feature set
 *          of the training data.
 */
-class SentPairsData(inFile:String, useExpert:Boolean, trainData:SentPairsData)  {
+class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData)  {
 
 	var data:Array[VectorSentencePair] = null
 
