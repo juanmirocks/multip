@@ -150,7 +150,7 @@ class MultiP(data:SentPairsData) extends Parameters(data) {
 		}
 	}
 
-	def inferHidden(dsp:VectorSentencePair):VectorSentencePair = {
+	def inferHidden(dsp: VectorSentencePair): VectorSentencePair = {
 		if(Constants.TIMING) {
 			Utils.Timer.start("inferHidden")
 		}
