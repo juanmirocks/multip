@@ -526,7 +526,7 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 				if (usePOS) {
 					val isTest =
 						if (cols.length == 8) true // 8-column format: both Amazon Mechanical Turk and Expert label
-						else { assert(cols.length == 7); false } // 7-column format: only Amazon Mechanical Turk label
+						else { assert(cols.length == 7, s"${nLines}: ${line}"); false } // 7-column format: only Amazon Mechanical Turk label
 
 						// Note!! the "test" prefix before the trend it (cols(0)) is hard-coded for purpose of
 						// reading in the topic-word significance for the Topical features only.
