@@ -525,7 +525,7 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 				}
 
 				val cols = line.toLowerCase().trim().split('\t')
-				var rsentpair:RawSentencePair = null
+				var rsentpair: RawSentencePair = null
 
 				//Read In one sentence pair from original annotation file
 				if (usePOS) {
@@ -552,7 +552,9 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 						}
 
 				//Extract phrase pairs and their features for this sentence pair
-				if (rsentpair != null && rsentpair.valid == true && ((useExpert == true && rsentpair.expertjudge != None) || useExpert == false && rsentpair.amtjudge != None)) {
+
+				//CAUTION Original code had the check too: && rsentpair.valid -- Removed so far to report on all instances. However, it's better for training not to include them
+				if (rsentpair != null && ((useExpert == true && rsentpair.expertjudge != None) || useExpert == false && rsentpair.amtjudge != None)) {
 					rawsentpairs += rsentpair
 
 					//Add the features (count 1 for each sent pair) that appear in this sentence pair to 'this.rawfeaturecounter'
