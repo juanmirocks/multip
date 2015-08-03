@@ -273,10 +273,15 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 		else trendname.replace("-","").toLowerCase().split(' ')
 	}
 
+	/* Typical behavior (original MultiP algorithm) is to disregard the trending words as possible features.
+	* CAUTION However, we need on very short sentences, with equal size of the trending words vector. Otherwise, there would be no features
+	* This in fact invalidates original MultiP's algorithm that paraphrases must at least have trending words & an anchor in common */
+	val disregardTrendingWords = trendnamewords.size < otmpwords.size && trendnamewords.size < ctmpwords.size
+
 	val origsent = ocasewords.mkString(" ")
 	val candsent = ccasewords.mkString(" ")
 
-	def readTokens(tmpwords: Array[String], tmpposs: Array[String]) = {
+	def readTokens(tmpwords: Array[String], tmpposs: Array[String], disregardTrendingWords: Boolean = true) = {
 		var words_buffer = new ArrayBuffer[String]()
 		var poss_buffer = new ArrayBuffer[String]()
 
@@ -284,7 +289,7 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 		var retMatched = false
 		while (index < tmpwords.length) {
 			var matched = false
-			if (trendnamewords.nonEmpty) {
+			if (trendnamewords.nonEmpty && disregardTrendingWords) {
 				var i = 0
 				if (tmpwords(index+i) == trendnamewords(i)) {
 					matched = true
@@ -312,8 +317,8 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 		(retMatched, words_buffer.toArray, poss_buffer.toArray)
 	}
 
-	val (omatched, owords, oposs) = readTokens(otmpwords, otmpposs)
-	val (cmatched, cwords, cposs) = readTokens(ctmpwords, ctmpposs)
+	val (omatched, owords, oposs) = readTokens(otmpwords, otmpposs, disregardTrendingWords)
+	val (cmatched, cwords, cposs) = readTokens(ctmpwords, ctmpposs, disregardTrendingWords)
 
 	val followsig = WordSig.getWordSiginTrend("follow", this.trendid)
 
