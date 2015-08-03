@@ -85,7 +85,7 @@ object Main extends App {
 
     var sysscores = new ArrayBuffer[Double]()
 
-    for(j <- 0 until datadata.data.length) {
+    for (j <- 0 until datadata.data.length) {
       val datapoint:VectorSentencePair = datadata.data(j)
 
       val (yespairscores, nopairscores ) = model.inferAllDebug(datapoint, useAveragedParameters)
@@ -98,7 +98,6 @@ object Main extends App {
 
       val goldlabel = if(againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
 
-
       if (goldlabel == true) {
         totalgoldpos += 1.0
       }
@@ -109,7 +108,6 @@ object Main extends App {
         } else {
           print("SYS = NOTPARA | " )
         }
-
 
         print(datapoint.toString)
       }
