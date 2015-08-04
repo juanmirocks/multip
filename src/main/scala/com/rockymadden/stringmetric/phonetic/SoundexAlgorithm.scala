@@ -32,7 +32,7 @@ class SoundexAlgorithm extends StringAlgorithm[DummyImplicit, String] { this: St
 				case 'l' => '4'
 				case 'm' | 'n' => '5'
 				case 'r' => '6'
-				case _ => '\0'
+				case _ => '\u0000'
 			}
 			val m1 = (mc: Char, pc: Char) => (mc: @switch) match {
 				case 'b' | 'f' | 'p' | 'v' if pc != '1' => '1'
@@ -41,7 +41,7 @@ class SoundexAlgorithm extends StringAlgorithm[DummyImplicit, String] { this: St
 				case 'l' if pc != '4' => '4'
 				case 'm' | 'n' if pc != '5' => '5'
 				case 'r' if pc != '6' => '6'
-				case _ => '\0'
+				case _ => '\u0000'
 			}
 			val a = pc match {
 				// Code twice.
@@ -56,8 +56,8 @@ class SoundexAlgorithm extends StringAlgorithm[DummyImplicit, String] { this: St
 				)
 			}
 
-			if (o.length == 3 && a != '\0') o :+ a
-			else transcode(i.tail, c, if (a != '\0') o :+ a else o)
+			if (o.length == 3 && a != '\u0000') o :+ a
+			else transcode(i.tail, c, if (a != '\u0000') o :+ a else o)
 		}
 	}
 }

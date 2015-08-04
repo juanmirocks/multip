@@ -27,14 +27,14 @@ class MetaphoneAlgorithm extends StringAlgorithm[DummyImplicit, String] { this: 
 
 	@tailrec
 	private[this] def transcode(l: Array[Char], c: Char, r: Array[Char], o: Array[Char]): Array[Char] = {
-		if (c == '\0' && r.length == 0) o
+		if (c == '\u0000' && r.length == 0) o
 		else {
 			def shift(d: Int, ca: Array[Char]) = {
 				val sca = r.splitAt(d - 1)
 
 				(
 					if (sca._1.length > 0) (l :+ c) ++ sca._1 else l :+ c,
-					if (sca._2.length > 0) sca._2.head else '\0',
+					if (sca._2.length > 0) sca._2.head else '\u0000',
 					if (sca._2.length > 1) sca._2.tail else Array.empty[Char],
 					ca
 				)
