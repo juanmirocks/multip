@@ -13,8 +13,10 @@ import breeze.numerics._
 // uses the EvalIterations function in Main.scala; not this Eval object.
 object Eval {
 
-  class Prediction(val score:Double, val correct:Boolean, val rel:String, val annotated_sentence:String) {
-    def this(score:Double, correct:Boolean) = this(score, correct, null, null)
+  class Prediction(val score: Double, val correct: Boolean, val rel: String, val annotated_sentence: String) {
+
+    def this(score: Double, correct: Boolean) = this(score, correct, null, null)
+
   }
 
   var useAveragedParameters = false
@@ -60,7 +62,7 @@ object Eval {
   //   max Precision point (and recall > 0.05)
   //   max Recall point (and precision > 0.5
   //This function is mainly used to monitor the training process, showing the model performance at each iteration
-  def PrintPR(sortedPredictions: List[Prediction], maxResults:Double) {
+  def PrintPR(sortedPredictions: List[Prediction], maxResults: Double) {
     var tp, fp, fn = 0.0
 
     var maxF,  maxFp, maxFr = 0.0
@@ -98,10 +100,16 @@ object Eval {
       }
     }
 
+    fn = maxResults - tp
+    val p = tp / (tp + fp)
+    val r = tp / (tp + fn)
+    val f = 2 * p * r / (p + r)
+
     println("# of paraphrases (predicted):" + sortedPredictions.length)
-    println("P:" + maxFp + "\tR:" + maxFr + "\tF:" + maxF)
-    println("P:" + maxP  + "\tR:" + maxPr + "\tF:" + maxPf)
-    println("P:" + maxRp + "\tR:" + maxR  + "\tF:" + maxRf)
+    println("normal; P:" + p     + "\tR:" + r     + "\tF:" + f)
+    println("max. F; P:" + maxFp + "\tR:" + maxFr + "\tF:" + maxF)
+    println("max. P; P:" + maxP  + "\tR:" + maxPr + "\tF:" + maxPf)
+    println("max. R; P:" + maxRp + "\tR:" + maxR  + "\tF:" + maxRf)
   }
 
 }
