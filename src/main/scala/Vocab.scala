@@ -56,6 +56,9 @@ class Vocab(minCount: Int = 1) {
     this
   }
 
+  def isLocked(): Boolean =
+    locked
+
   def getMinCountVocab: Vocab = {
     //locked = true
 

@@ -486,7 +486,7 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 	val IS_NOT_PARAPHRASE = 0
 
 	val nRel:Int = 2  // only 2 different labels for sentence pairs, either paraphrase or not
-	var nFeature:Int = 0
+	def nFeature: Int = this.featureVocab.size
 	var nSentPairs:Int = 0
 
 	var sentVocab:Vocab = null
@@ -570,12 +570,12 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 				}
 			}
 
-			//Go over rawfeaturecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
-			this.nFeature = 0
-			for ((fstr, fcount) <- rawfeaturecounter) {
-				if (fcount >= N_FEATURE_CUTOFF) {
-					val f = this.featureVocab(fstr)
-					this.nFeature += 1
+			if (!this.featureVocab.isLocked()) {
+				//Go over rawfeaturecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
+				for ((fstr, fcount) <- rawfeaturecounter) {
+					if (fcount >= N_FEATURE_CUTOFF) {
+						this.featureVocab.apply(fstr)
+					}
 				}
 			}
 
