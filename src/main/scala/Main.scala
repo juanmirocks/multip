@@ -41,7 +41,7 @@ object Main extends App {
 
 
   // The main process for training and testing the MultiP model
-  def EvalIterations(model:Parameters, nIter:Int, test:SentPairsData, againstexpertlabel:Boolean) {
+  def EvalIterations(model: Parameters, nIter: Int, test: SentPairsData, againstexpertlabel: Boolean) {
 
     ///  Training  ///
     for(i <- 1 to nIter) {
@@ -143,7 +143,7 @@ object Main extends App {
       val sysscorearray = sysscores.toArray
       for (j <- 0 until datadata.data.length) {
         val sysscore = sysscorearray(j)
-        val datapoint:VectorSentencePair = datadata.data(j)
+        val datapoint: VectorSentencePair = datadata.data(j)
 
         val predicted = model.inferAll(datapoint, useAveragedParameters)
         val goldlabel = if(againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
@@ -165,7 +165,7 @@ object Main extends App {
       // PRINT PR Curve with PINC score
       var tp = 0.0
       var fp = 0.0
-      var tn = 0.0
+      //var tn = 0.0
       var fn = 0.0
       var totalpinc = 0.0
 
@@ -192,10 +192,8 @@ object Main extends App {
         if (sent1 != sent2) {
           i += 1
 
-
           val predicted = model.inferAll(paradata, useAveragedParameters)
           val prediction = predicted.rel(model.data.IS_PARAPHRASE)
-
 
           val goldlabel = if(againstexpertlabel) paradata.expertjudge.getOrElse(false) else paradata.amtjudge.getOrElse(false)
 
@@ -224,18 +222,12 @@ object Main extends App {
             maxfscore  = fscore
             maxfoutput = output
           }
-
         }
-
-
       }
 
       println()
       println ("MAX" + maxfoutput)
-
     }
   }
-
-
 
 }
