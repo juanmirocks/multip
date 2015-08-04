@@ -22,17 +22,13 @@ object Main extends App {
   val nIter = if (args.size > 0) args(0).toInt else 50
   val runTests = if (args.size > 1) args.tail.toSet else Set[String]()
 
-  // read in training data, then test data.
-  // the order matters, since test data has to create the features that exist in
-  // the training data and use the same mapping to convert features into vector representations.
-  val trainlabel = false // false - use Turker's label; true - use expert's label
-  val trainfile = "./data/train.labeled.data"
-  val traindata = new SentPairsData(trainfile, trainlabel, null)
-  println("size of train data = " + traindata.data.length)
+  val testlabel = true
 
-  val testlabel = true // false - use Turker's label; true - use expert's label
-  val testfile = "./data/test.labeled.data"
-  val testdata = new SentPairsData(testfile, testlabel, traindata)
+  val List(Data(traindata, testdata)) = Data.createOne(
+    "./data/train.labeled.data", useExpertTraining = false,
+    "./data/test.labeled.data", useExpertEval = testlabel)
+
+  println("size of train data = " + traindata.data.length)
   println("size of test data = " + testdata.data.length)
 
   // build the MultiP (Multiple-instances Learning Paraphrase Model)
@@ -96,7 +92,7 @@ object Main extends App {
       val prediction = predicted.rel(r)
       var score = 0.0
 
-      val goldlabel = if(againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
+      val goldlabel = if (againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
 
       if (goldlabel == true) {
         totalgoldpos += 1.0
