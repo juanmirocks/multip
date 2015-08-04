@@ -44,7 +44,7 @@ object Main extends App {
   def EvalIterations(model:Parameters, nIter:Int, test:SentPairsData, againstexpertlabel:Boolean) {
 
     ///  Training  ///
-    for(i <- 0 to nIter) {
+    for(i <- 1 to nIter) {
       println("****************** iteration " + i + "******************")
 
       model.train(1, null)
