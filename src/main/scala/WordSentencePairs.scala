@@ -417,21 +417,20 @@ abstract class SuperVectorSentencePair  {
 */
 class VectorSentencePair (val trendid:String, val trendname:String, val origsent:String, val candsent:String, val amtjudge:Option[Boolean], val expertjudge:Option[Boolean]) extends SuperVectorSentencePair {
 
-	def this (rawsentpair:RawSentencePair) {
+	def this(rawsentpair: RawSentencePair) {
 		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.amtjudge, rawsentpair.expertjudge)
 	}
 
-	def this (rawsentpair:RawSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVector[Double]], useExpert:Boolean) {
+	def this(rawsentpair: RawSentencePair, w1ids: Array[Int], w2ids: Array[Int], features: Array[SparseVector[Double]], useExpert: Boolean) {
 		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.amtjudge, rawsentpair.expertjudge)
 
 		this.w1ids = w1ids
 		this.w2ids = w2ids
 		this.features = features
 
-		var judge = rawsentpair.amtjudge
-
-		if (useExpert == true) {
-			judge = rawsentpair.expertjudge
+		val judge = {
+			if (useExpert) rawsentpair.expertjudge
+			else rawsentpair.amtjudge
 		}
 
 		if (judge == Some(true)) {
@@ -519,9 +518,9 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 
 		//First pass: Read In the original annotation file one line at each time (one sentence pair per line)
 		var nLines = 0
-		for(line <- Source.fromFile(inFile).getLines()) {
+		for (line <- Source.fromFile(inFile).getLines()) {
 			nLines += 1
-			if(nLines % 1000 == 0) {
+			if (nLines % 1000 == 0) {
 				println("    read " + nLines + " lines")
 			}
 
@@ -530,119 +529,120 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 
 			//Read In one sentence pair from original annotation file
 			if (usePOS) {
-				val isTest =
+				val isTest = {
 					if (cols.length == 8) true // 8-column format: both Amazon Mechanical Turk and Expert label
 					else { assert(cols.length == 7, s"${nLines}: ${line}"); false } // 7-column format: only Amazon Mechanical Turk label
-
-					// Note!! the "test" prefix before the trend it (cols(0)) is hard-coded for purpose of
-					// reading in the topic-word significance for the Topical features only.
-					// The Topical features were used in our TACL paper, and computed by an external script (not in MultiP)
-					// and saved in the data files, which are read into the MultiP.
-					// The "test" prefix is to distinguish the different trend id indices used for training and test data
-
-					// If you want to remove this topical feature (also called Sig feature in the code of MultiP),
-					// you would want to modify the code of class RawWordPair in this file.
-
-					rsentpair = new RawSentencePair(
-						trendid = (if (isTest) "test" else "") + cols(0),
-						trendname = cols(1),
-						origpossent = if (isTest) cols(6) else cols(5),
-						candpossent = if (isTest) cols(7) else cols(6),
-						amtstr = cols(4),
-						expertstr = if (isTest) cols(5) else null)
-					}
-
-					//Extract phrase pairs and their features for this sentence pair
-
-					//CAUTION Original code had the check too: && rsentpair.valid -- Removed so far to report on all instances. However, it's better for training not to include them
-					if (rsentpair != null && ((useExpert == true && rsentpair.expertjudge != None) || useExpert == false && rsentpair.amtjudge != None)) {
-						rawsentpairs += rsentpair
-
-						//Add the features (count 1 for each sent pair) that appear in this sentence pair to 'this.rawfeaturecounter'
-						rawfeaturecounter = rawfeaturecounter ++ rsentpair.rawfeatureset.zip(Stream.continually(1)).toMap.map{ case (k,v) => k -> (v + rawfeaturecounter.getOrElse(k,0)) }
-
-						this.sentVocab.apply(rsentpair.origsent)
-						this.sentVocab.apply(rsentpair.candsent)
-
-						for (rwpair <- rsentpair.rawwordpairs) {
-							this.wordVocab.apply(rwpair.word1)
-							this.wordVocab.apply(rwpair.word2)
-						}
-					}
 				}
 
-				if (!this.featureVocab.isLocked()) {
-					//Go over rawfeaturecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
-					for ((fstr, fcount) <- rawfeaturecounter) {
-						if (fcount >= N_FEATURE_CUTOFF) {
-							this.featureVocab.apply(fstr)
-						}
-					}
+				// Note!! the "test" prefix before the trend it (cols(0)) is hard-coded for purpose of
+				// reading in the topic-word significance for the Topical features only.
+				// The Topical features were used in our TACL paper, and computed by an external script (not in MultiP)
+				// and saved in the data files, which are read into the MultiP.
+				// The "test" prefix is to distinguish the different trend id indices used for training and test data
+
+				// If you want to remove this topical feature (also called Sig feature in the code of MultiP),
+				// you would want to modify the code of class RawWordPair in this file.
+
+				rsentpair = new RawSentencePair(
+					trendid = (if (isTest) "test" else "") + cols(0),
+					trendname = cols(1),
+					origpossent = if (isTest) cols(6) else cols(5),
+					candpossent = if (isTest) cols(7) else cols(6),
+					amtstr = cols(4),
+					expertstr = if (isTest) cols(5) else null)
 				}
 
+				//Extract phrase pairs and their features for this sentence pair
 
-				//Second pass:
-				this.featureVocab.lock()
+				//CAUTION Original code had the check too: && rsentpair.valid -- Removed so far to report on all instances. However, it's better for training not to include them
+				if (rsentpair != null && ((useExpert == true && rsentpair.expertjudge != None) || useExpert == false && rsentpair.amtjudge != None)) {
+					rawsentpairs += rsentpair
 
-				this.data = new Array[VectorSentencePair](rawsentpairs.size)
-				this.nSentPairs = 0
-				for (rspair <- rawsentpairs) {
-					val w1s = new Array[Int](rspair.rawwordpairs.length)
-					val w2s = new Array[Int](rspair.rawwordpairs.length)
-					val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
+					//Add the features (count 1 for each sent pair) that appear in this sentence pair to 'this.rawfeaturecounter'
+					rawfeaturecounter = rawfeaturecounter ++ rsentpair.rawfeatureset.zip(Stream.continually(1)).toMap.map{ case (k,v) => k -> (v + rawfeaturecounter.getOrElse(k,0)) }
 
-					for (i <- 0 until rspair.rawwordpairs.length) {
-						val wpair:RawWordPair = rspair.rawwordpairs(i)
-						w1s(i) = this.wordVocab(rspair.rawwordpairs(i).word1)
-						w2s(i) = this.wordVocab(rspair.rawwordpairs(i).word2)
+					this.sentVocab.apply(rsentpair.origsent)
+					this.sentVocab.apply(rsentpair.candsent)
 
-						swfeatures(i) = SparseVector.zeros[Double](this.featureVocab.size + 1)
-						swfeatures(i)(this.featureVocab.size) = 1.0	//Bias feature
-
-						for(j <- 0 until wpair.rawfeatures.length) {
-							val f = this.featureVocab(wpair.rawfeatures(j))
-							//println(f + " " + ppair.rawfeatures(j))
-							if(f >= 0) {
-								swfeatures(i)(f) = 1.0
-							}
-						}
+					for (rwpair <- rsentpair.rawwordpairs) {
+						this.wordVocab.apply(rwpair.word1)
+						this.wordVocab.apply(rwpair.word2)
 					}
-
-					this.data(this.nSentPairs) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
-					this.nSentPairs += 1
 				}
 			}
 
-			override def toString() :String = {
-				var output = ""
-				for ( i <- 0 until data.length) {
-					val datapoint = this.data(i)
-					output += datapoint.rel(0) + " | " + datapoint.rel(1) + " | " + datapoint.trendname + " | " + datapoint.origsent + " | " + datapoint.candsent + "\n"
+			if (!this.featureVocab.isLocked()) {
+				//Go over rawfeaturecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
+				for ((fstr, fcount) <- rawfeaturecounter) {
+					if (fcount >= N_FEATURE_CUTOFF) {
+						this.featureVocab.apply(fstr)
+					}
 				}
-				return output
 			}
 
-			def toString(index:Int) :String = {
 
+			//Second pass:
+			this.featureVocab.lock()
 
-				val datapoint = this.data(index)
-				var output = ""
+			this.data = new Array[VectorSentencePair](rawsentpairs.size)
+			this.nSentPairs = 0
+			for (rspair <- rawsentpairs) {
+				val w1s = new Array[Int](rspair.rawwordpairs.length)
+				val w2s = new Array[Int](rspair.rawwordpairs.length)
+				val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
 
-				if (datapoint.rel(IS_NOT_PARAPHRASE) == 1.0) {
-					output += this.relVocab(IS_NOT_PARAPHRASE)
-				} else if (datapoint.rel(IS_PARAPHRASE) == 1.0) {
-					output += this.relVocab(IS_PARAPHRASE)
+				for (i <- 0 until rspair.rawwordpairs.length) {
+					val wpair:RawWordPair = rspair.rawwordpairs(i)
+					w1s(i) = this.wordVocab(rspair.rawwordpairs(i).word1)
+					w2s(i) = this.wordVocab(rspair.rawwordpairs(i).word2)
+
+					swfeatures(i) = SparseVector.zeros[Double](this.featureVocab.size + 1)
+					swfeatures(i)(this.featureVocab.size) = 1.0	//Bias feature
+
+					for(j <- 0 until wpair.rawfeatures.length) {
+						val f = this.featureVocab(wpair.rawfeatures(j))
+						//println(f + " " + ppair.rawfeatures(j))
+						if (f >= 0) {
+							swfeatures(i)(f) = 1.0
+						}
+					}
 				}
 
-				output += " | " + datapoint.trendname + " | " + datapoint.origsent + " | " + datapoint.candsent + "\n"
-				for (i <- 0 until datapoint.features.length) {
-					output += "WordPair #" + i + " : " + this.wordVocab(datapoint.w1ids(i)) + " | " + this.wordVocab(datapoint.w2ids(i)) + " | "
-
-					val strfeatures = Utils.bin2int(datapoint.features(i).toArray).map((f) => this.featureVocab(f))
-					output += strfeatures.mkString(" ")
-					output += "\n"
-				}
-
-				return output
+				this.data(this.nSentPairs) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
+				this.nSentPairs += 1
 			}
 		}
+
+		override def toString() :String = {
+			var output = ""
+			for ( i <- 0 until data.length) {
+				val datapoint = this.data(i)
+				output += datapoint.rel(0) + " | " + datapoint.rel(1) + " | " + datapoint.trendname + " | " + datapoint.origsent + " | " + datapoint.candsent + "\n"
+			}
+			return output
+		}
+
+		def toString(index:Int) :String = {
+
+
+			val datapoint = this.data(index)
+			var output = ""
+
+			if (datapoint.rel(IS_NOT_PARAPHRASE) == 1.0) {
+				output += this.relVocab(IS_NOT_PARAPHRASE)
+			} else if (datapoint.rel(IS_PARAPHRASE) == 1.0) {
+				output += this.relVocab(IS_PARAPHRASE)
+			}
+
+			output += " | " + datapoint.trendname + " | " + datapoint.origsent + " | " + datapoint.candsent + "\n"
+			for (i <- 0 until datapoint.features.length) {
+				output += "WordPair #" + i + " : " + this.wordVocab(datapoint.w1ids(i)) + " | " + this.wordVocab(datapoint.w2ids(i)) + " | "
+
+				val strfeatures = Utils.bin2int(datapoint.features(i).toArray).map((f) => this.featureVocab(f))
+				output += strfeatures.mkString(" ")
+				output += "\n"
+			}
+
+			return output
+		}
+	}
