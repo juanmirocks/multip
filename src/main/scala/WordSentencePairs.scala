@@ -461,6 +461,13 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 
 }
 
+object SentPairsData {
+
+	val USE_POS = true
+	val NGRAM_PHRASE_PAIR = 1
+	val N_FEATURE_CUTOFF = 3
+
+}
 
 /* Class SentPairsData:
 *   a data structure of raw data read from files and converted into vector presentation for efficiency
@@ -478,26 +485,21 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 *          of the training data.
 */
 class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData)  {
+	import SentPairsData._
 
-	var data:Array[VectorSentencePair] = null
+	var data: Array[VectorSentencePair] = null
+	var sentVocab: Vocab = null
+	var wordVocab: Vocab = null
+	var featureVocab: Vocab = null
 
-	val IS_PARAPHRASE = 1
-	val IS_NOT_PARAPHRASE = 0
+	def nSentPairs: Int = data.size
+	def nFeature: Int = this.featureVocab.size
 
 	val nRel:Int = 2  // only 2 different labels for sentence pairs, either paraphrase or not
-	def nFeature: Int = this.featureVocab.size
-	var nSentPairs:Int = 0
-
-	var sentVocab:Vocab = null
-	var wordVocab:Vocab = null
-	var featureVocab:Vocab = null
-
+	val IS_PARAPHRASE = 1
+	val IS_NOT_PARAPHRASE = 0
 	val relVocab = Array("NonPara", "YesPara")
 
-	val NGRAM_PHRASE_PAIR = 1
-	val N_FEATURE_CUTOFF = 3
-
-	val usePOS = true
 
 	this.readinFromAnnotationFile(inFile, useExpert, trainData)
 
@@ -528,7 +530,7 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 			var rsentpair: RawSentencePair = null
 
 			//Read In one sentence pair from original annotation file
-			if (usePOS) {
+			if (USE_POS) {
 				val isTest = {
 					if (cols.length == 8) true // 8-column format: both Amazon Mechanical Turk and Expert label
 					else { assert(cols.length == 7, s"${nLines}: ${line}"); false } // 7-column format: only Amazon Mechanical Turk label
@@ -585,7 +587,6 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 			this.featureVocab.lock()
 
 			this.data = new Array[VectorSentencePair](rawsentpairs.size)
-			this.nSentPairs = 0
 			for (rspair <- rawsentpairs) {
 				val w1s = new Array[Int](rspair.rawwordpairs.length)
 				val w2s = new Array[Int](rspair.rawwordpairs.length)
@@ -609,11 +610,10 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 				}
 
 				this.data(this.nSentPairs) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
-				this.nSentPairs += 1
 			}
 		}
 
-		override def toString() :String = {
+		override def toString(): String = {
 			var output = ""
 			for ( i <- 0 until data.length) {
 				val datapoint = this.data(i)
@@ -622,9 +622,7 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 			return output
 		}
 
-		def toString(index:Int) :String = {
-
-
+		def toString(index: Int): String = {
 			val datapoint = this.data(index)
 			var output = ""
 
