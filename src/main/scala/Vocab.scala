@@ -19,6 +19,12 @@ class Vocab(minCount: Int = 1) {
   private var nextInt = 0
   private var locked = false
 
+  /**
+  * Get feature-tring mapped as integer value if Vocab isLocked or else update
+  * the vocabulary with this new feature.
+  *
+  * CAUTION: despite the `apply` name, this method has side effects.
+  */
   def apply(s: String): Int = {
     if (locked) {
       string2Int.get(s) match {
