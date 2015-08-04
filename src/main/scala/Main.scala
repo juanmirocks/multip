@@ -52,9 +52,9 @@ object Main extends App {
       // This Eval(uation) instance is mainly used for monitoring the performance of trained model at each iteration
       Eval.useAveragedParameters = true
 
-      //Test on the training dataset
-      println("Evaluate on the training data:")
-      Eval.AggregateEval(model, model.data)
+      // //Test on the training dataset
+      // println("Evaluate on the training data:")
+      // Eval.AggregateEval(model, model.data)
       //Test on the test dataset
       println("Evaluate on the test data:")
       Eval.AggregateEval(model, test)
