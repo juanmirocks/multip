@@ -51,7 +51,7 @@ class Vocab(minCount: Int = 1) {
     }
   }
 
-  def lock: Vocab = {
+  def lock(): Vocab = {
     locked = true
     this
   }

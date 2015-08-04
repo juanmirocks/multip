@@ -581,7 +581,7 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 
 
 			//Second pass:
-			this.featureVocab.lock
+			this.featureVocab.lock()
 
 			this.data = new Array[VectorSentencePair](rawsentpairs.size)
 			this.nSentPairs = 0
