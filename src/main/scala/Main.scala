@@ -22,11 +22,12 @@ object Main extends App {
   val nIter = if (args.size > 0) args(0).toInt else 50
   val runTests = if (args.size > 1) args.tail.toSet else Set[String]()
 
-  val testlabel = true
+  val trainlabel = false // false - use Turker's label; true - use expert's label
+  val testlabel = true // false - use Turker's label; true - use expert's label
 
-  val List(Data(traindata, testdata)) = Data.createOne(
-    "./data/train.labeled.data", useExpertTraining = false,
-    "./data/test.labeled.data", useExpertEval = testlabel)
+  val rawTrain = Data.readPitFile("./data/train.labeled.data", trainlabel)
+  val rawEval = Data.readPitFile("./data/test.labeled.data", testlabel)
+  val List(Data(traindata, testdata)) = Data.createOne(rawTrain, trainlabel, rawEval, testlabel)
 
   println("size of train data = " + traindata.data.length)
   println("size of test data = " + testdata.data.length)

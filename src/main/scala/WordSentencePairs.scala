@@ -471,19 +471,13 @@ object Data {
 	val NGRAM_PHRASE_PAIR = 1
 	val N_FEATURE_CUTOFF = 3
 
-	def createOne(fileTraining: String, useExpertTraining: Boolean, fileEval: String, useExpertEval: Boolean): List[Data] = {
+	def createOne(rawTraining: RawSentPairsData, useExpertTraining: Boolean, rawEvaluation: RawSentPairsData, useExpertEval: Boolean): List[Data] = {
 		// read in training data, then test data.
 	  // the order matters, since test data has to create the features that exist in
 	  // the training data and use the same mapping to convert features into vector representations.
 
-		val training = {
-			val (rawsentpairs, rawfeaturecounter) = readPitFile(fileTraining, useExpertTraining)
-			createSentPairsData(useExpertTraining, rawsentpairs, rawfeaturecounter)
-		}
-		val evaluation = {
-			val (rawsentpairs, rawfeaturecounter) = readPitFile(fileEval, useExpertEval)
-			createSentPairsData(useExpertEval, rawsentpairs, rawfeaturecounter, training.featureVocab)
-		}
+		val training = createSentPairsData(useExpertTraining, rawTraining)
+		val evaluation = createSentPairsData(useExpertEval, rawEvaluation, training.featureVocab)
 
 		List(Data(training, evaluation))
 	}
@@ -492,11 +486,11 @@ object Data {
 		???
 	}
 
-	private def createSentPairsData(useExpert: Boolean, rawsentpairs: ArrayBuffer[RawSentencePair], rawfeaturecounter: Map[String, Int], featureVocab: Vocab = new Vocab()): SentPairsData = {
+	private def createSentPairsData(useExpert: Boolean, raw: RawSentPairsData, featureVocab: Vocab = new Vocab()): SentPairsData = {
 		val sentVocab = new Vocab
 		val wordVocab = new Vocab
 
-		for (rsentpair <- rawsentpairs) {
+		for (rsentpair <- raw.sentpairs) {
 			sentVocab.apply(rsentpair.origsent)
 			sentVocab.apply(rsentpair.candsent)
 
@@ -507,8 +501,8 @@ object Data {
 		}
 
 		if (!featureVocab.isLocked()) {
-			//Go over rawfeaturecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
-			for ((fstr, fcount) <- rawfeaturecounter) {
+			//Go over raw.featurecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
+			for ((fstr, fcount) <- raw.featurecounter) {
 				if (fcount >= N_FEATURE_CUTOFF) {
 					featureVocab.apply(fstr)
 				}
@@ -517,8 +511,8 @@ object Data {
 			featureVocab.lock()
 		}
 
-		val data = new Array[VectorSentencePair](rawsentpairs.size)
-		for ((rspair, index) <- rawsentpairs.zipWithIndex) {
+		val data = new Array[VectorSentencePair](raw.sentpairs.size)
+		for ((rspair, index) <- raw.sentpairs.zipWithIndex) {
 			val w1s = new Array[Int](rspair.rawwordpairs.length)
 			val w2s = new Array[Int](rspair.rawwordpairs.length)
 			val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
@@ -546,7 +540,7 @@ object Data {
 		new SentPairsData(data, sentVocab.lock(), wordVocab.lock(), featureVocab)
 	}
 
-	def readPitFile(inFile: String, useExpert: Boolean): (ArrayBuffer[RawSentencePair], Map[String, Int]) = {
+	def readPitFile(inFile: String, useExpert: Boolean): RawSentPairsData = {
 		var rawsentpairs = new ArrayBuffer[RawSentencePair]()
 		var rawfeaturecounter = Map.empty[String, Int]
 
@@ -598,8 +592,12 @@ object Data {
 				}
 			}
 
-			(rawsentpairs, rawfeaturecounter)
+			RawSentPairsData(rawsentpairs, rawfeaturecounter)
 		}
+
+	}
+
+	case class RawSentPairsData(sentpairs: ArrayBuffer[RawSentencePair], featurecounter: Map[String, Int]) {
 
 	}
 
