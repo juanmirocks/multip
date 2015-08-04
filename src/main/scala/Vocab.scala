@@ -1,37 +1,52 @@
 package multip;
 
 import scala.collection.mutable.HashMap
-import scala.collection.mutable.HashSet
+
+object Vocab {
+
+  //Unknown, so called in original code
+  val UNK_INT = -1
+  val UNK_STR = "-UNK-"
+
+}
 
 // Vocabulary class maps strings to integers for efficiency
 class Vocab(minCount: Int = 1) {
 
-  var string2Int   = new HashMap[String, Int]
-  var string2Count = new HashMap[String, Int]
-  var int2String   = new HashMap[Int, String]
-  private val unk = -1
+  private val string2Int   = new HashMap[String, Int]
+  private val string2Count = new HashMap[String, Int]
+  private val int2String   = new HashMap[Int, String]
   private var nextInt = 0
   private var locked = false
 
   def apply(s: String): Int = {
-
-    //if(!string2Int.contains(s) && locked) {
-    if((!string2Int.contains(s) || string2Count(s) < minCount) && locked) {
-      return -1  //UNK is -1
+    if (locked) {
+      string2Int.get(s) match {
+        case Some(i) if string2Count(s) >= minCount => i
+        case _ => Vocab.UNK_INT
+      }
     }
-    else if(!string2Int.contains(s)) {
-      string2Int   += s -> nextInt
-      int2String   += nextInt -> s
-      string2Count += s -> 0
-      nextInt += 1
+    else {
+      string2Int.get(s) match {
+        case Some(i) => {
+          string2Count(s) += 1
+          i
+        }
+        case None => {
+          val ret = nextInt
+          string2Int   += s -> ret
+          int2String   += nextInt -> s
+          string2Count += s -> 1
+          nextInt += 1
+          ret
+        }
+      }
     }
-    string2Count(s) += 1
-    return string2Int(s)
   }
 
   def apply(i: Int): String = {
     int2String.get(i) match {
-      case None => "-UNK-"
+      case None => Vocab.UNK_STR
       case Some(x) => x
     }
   }
@@ -41,7 +56,7 @@ class Vocab(minCount: Int = 1) {
     this
   }
 
-  def getMinCountVocab = {
+  def getMinCountVocab: Vocab = {
     //locked = true
 
     val newVocab = new Vocab(minCount)
@@ -54,7 +69,6 @@ class Vocab(minCount: Int = 1) {
 
     newVocab.locked = true
 
-    //this
     newVocab
   }
 
