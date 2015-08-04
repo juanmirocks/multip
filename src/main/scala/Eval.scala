@@ -3,6 +3,10 @@ package multip;
 
 import scala.util.Random;
 
+import breeze.linalg._
+import breeze.math._
+import breeze.numerics._
+
 
 // This Eval(uation) object is mainly used for monitoring the performance of trained model at each iteration.
 // The final evaluation of the system performance (that reproduces the result we reported in our TACL paper)
@@ -36,10 +40,10 @@ object Eval {
       }
 
       if (goldlabel == 1.0 && prediction == 1.0) {
-        sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, true)
+        sortedPredictions ::= new Prediction(max(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE)), true)
       }
       else if (goldlabel == 0.0 && prediction == 1.0) {
-        sortedPredictions ::= new Prediction(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE).max, false)
+        sortedPredictions ::= new Prediction(max(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE)), false)
       }
     }
 
@@ -62,6 +66,7 @@ object Eval {
     var maxF,  maxFp, maxFr = 0.0
     var maxP,  maxPr, maxPf = 0.0
     var maxRp, maxR,  maxRf = 0.0
+
     for (prediction <- sortedPredictions.sortBy(-_.score)) {
       if (prediction.correct) {
         tp += 1.0
