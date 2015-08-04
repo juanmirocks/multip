@@ -587,7 +587,7 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 			this.featureVocab.lock()
 
 			this.data = new Array[VectorSentencePair](rawsentpairs.size)
-			for (rspair <- rawsentpairs) {
+			for ((rspair, index) <- rawsentpairs.zipWithIndex) {
 				val w1s = new Array[Int](rspair.rawwordpairs.length)
 				val w2s = new Array[Int](rspair.rawwordpairs.length)
 				val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
@@ -609,7 +609,7 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 					}
 				}
 
-				this.data(this.nSentPairs) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
+				this.data(index) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
 			}
 		}
 
