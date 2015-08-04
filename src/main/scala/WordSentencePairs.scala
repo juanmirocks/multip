@@ -467,56 +467,11 @@ object SentPairsData {
 	val NGRAM_PHRASE_PAIR = 1
 	val N_FEATURE_CUTOFF = 3
 
-}
-
-/* Class SentPairsData:
-*   a data structure of raw data read from files and converted into vector presentation for efficiency
-*
-* Main Function:
-*   readinFromAnnotationFile (inFile:String, useExpert:Boolean, trainData:SentPairsData)
-*     - inFile: the data file name
-*     - trainData:
-*          The internal data structure uses vector representations.
-*          When reading in training data, set the input parameter "trainData" as "null",
-*          and a new mapping of features to their vector index (featureVocab) will be built.
-*          Next, when reading in the test data, point the input paramater "trainData" to
-*          the training data instance (of type SentPairsData) you just created, and
-*          the feature vectors for test data will be created, using the same feature set
-*          of the training data.
-*/
-class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData)  {
-	import SentPairsData._
-
-	var data: Array[VectorSentencePair] = null
-	var sentVocab: Vocab = null
-	var wordVocab: Vocab = null
-	var featureVocab: Vocab = null
-
-	def nSentPairs: Int = data.size
-	def nFeature: Int = this.featureVocab.size
-
-	val nRel:Int = 2  // only 2 different labels for sentence pairs, either paraphrase or not
-	val IS_PARAPHRASE = 1
-	val IS_NOT_PARAPHRASE = 0
-	val relVocab = Array("NonPara", "YesPara")
-
-
-	this.readinFromAnnotationFile(inFile, useExpert, trainData)
-
-	def readinFromAnnotationFile(inFile: String, useExpert: Boolean, trainData: SentPairsData) {
-
-		this.sentVocab = new Vocab
-		this.wordVocab = new Vocab
-		this.featureVocab = {
-			if (trainData == null) new Vocab
-			else trainData.featureVocab
-		}
-
+	def readPitFile(inFile: String, useExpert: Boolean): (ArrayBuffer[RawSentencePair], Map[String, Int]) = {
 		var rawsentpairs = new ArrayBuffer[RawSentencePair]()
-		var rawfeaturecounter = Map.empty[String,Int]
+		var rawfeaturecounter = Map.empty[String, Int]
 
 		println("Read In Data From Annotation File: " + inFile)
-
 
 		//First pass: Read In the original annotation file one line at each time (one sentence pair per line)
 		var nLines = 0
@@ -562,85 +517,136 @@ class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData
 
 					//Add the features (count 1 for each sent pair) that appear in this sentence pair to 'this.rawfeaturecounter'
 					rawfeaturecounter = rawfeaturecounter ++ rsentpair.rawfeatureset.zip(Stream.continually(1)).toMap.map{ case (k,v) => k -> (v + rawfeaturecounter.getOrElse(k,0)) }
-
-					this.sentVocab.apply(rsentpair.origsent)
-					this.sentVocab.apply(rsentpair.candsent)
-
-					for (rwpair <- rsentpair.rawwordpairs) {
-						this.wordVocab.apply(rwpair.word1)
-						this.wordVocab.apply(rwpair.word2)
-					}
 				}
 			}
 
-			if (!this.featureVocab.isLocked()) {
-				//Go over rawfeaturecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
-				for ((fstr, fcount) <- rawfeaturecounter) {
-					if (fcount >= N_FEATURE_CUTOFF) {
-						this.featureVocab.apply(fstr)
-					}
-				}
-			}
+			(rawsentpairs, rawfeaturecounter)
+		}
+
+}
+
+/* Class SentPairsData:
+*   a data structure of raw data read from files and converted into vector presentation for efficiency
+*
+* Main Function:
+*   readinFromAnnotationFile (inFile:String, useExpert:Boolean, trainData:SentPairsData)
+*     - inFile: the data file name
+*     - trainData:
+*          The internal data structure uses vector representations.
+*          When reading in training data, set the input parameter "trainData" as "null",
+*          and a new mapping of features to their vector index (featureVocab) will be built.
+*          Next, when reading in the test data, point the input paramater "trainData" to
+*          the training data instance (of type SentPairsData) you just created, and
+*          the feature vectors for test data will be created, using the same feature set
+*          of the training data.
+*/
+class SentPairsData(inFile: String, useExpert: Boolean, trainData: SentPairsData)  {
+	import SentPairsData._
+
+	var data: Array[VectorSentencePair] = null
+	var sentVocab: Vocab = null
+	var wordVocab: Vocab = null
+	var featureVocab: Vocab = null
+
+	def nSentPairs: Int = data.size
+	def nFeature: Int = this.featureVocab.size
+
+	val nRel:Int = 2  // only 2 different labels for sentence pairs, either paraphrase or not
+	val IS_PARAPHRASE = 1
+	val IS_NOT_PARAPHRASE = 0
+	val relVocab = Array("NonPara", "YesPara")
 
 
-			//Second pass:
-			this.featureVocab.lock()
+	this.readinFromAnnotationFile(inFile, useExpert, trainData)
 
-			this.data = new Array[VectorSentencePair](rawsentpairs.size)
-			for ((rspair, index) <- rawsentpairs.zipWithIndex) {
-				val w1s = new Array[Int](rspair.rawwordpairs.length)
-				val w2s = new Array[Int](rspair.rawwordpairs.length)
-				val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
+	def readinFromAnnotationFile(inFile: String, useExpert: Boolean, trainData: SentPairsData) {
 
-				for (i <- 0 until rspair.rawwordpairs.length) {
-					val wpair:RawWordPair = rspair.rawwordpairs(i)
-					w1s(i) = this.wordVocab(rspair.rawwordpairs(i).word1)
-					w2s(i) = this.wordVocab(rspair.rawwordpairs(i).word2)
+		this.sentVocab = new Vocab
+		this.wordVocab = new Vocab
+		this.featureVocab = {
+			if (trainData == null) new Vocab
+			else trainData.featureVocab
+		}
 
-					swfeatures(i) = SparseVector.zeros[Double](this.featureVocab.size + 1)
-					swfeatures(i)(this.featureVocab.size) = 1.0	//Bias feature
+		val (rawsentpairs, rawfeaturecounter) = readPitFile(inFile, useExpert)
 
-					for(j <- 0 until wpair.rawfeatures.length) {
-						val f = this.featureVocab(wpair.rawfeatures(j))
-						//println(f + " " + ppair.rawfeatures(j))
-						if (f >= 0) {
-							swfeatures(i)(f) = 1.0
-						}
-					}
-				}
+		for (rsentpair <- rawsentpairs) {
+			this.sentVocab.apply(rsentpair.origsent)
+			this.sentVocab.apply(rsentpair.candsent)
 
-				this.data(index) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
+			for (rwpair <- rsentpair.rawwordpairs) {
+				this.wordVocab.apply(rwpair.word1)
+				this.wordVocab.apply(rwpair.word2)
 			}
 		}
 
-		override def toString(): String = {
-			var output = ""
-			for ( i <- 0 until data.length) {
-				val datapoint = this.data(i)
-				output += datapoint.rel(0) + " | " + datapoint.rel(1) + " | " + datapoint.trendname + " | " + datapoint.origsent + " | " + datapoint.candsent + "\n"
+		if (!this.featureVocab.isLocked()) {
+			//Go over rawfeaturecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
+			for ((fstr, fcount) <- rawfeaturecounter) {
+				if (fcount >= N_FEATURE_CUTOFF) {
+					this.featureVocab.apply(fstr)
+				}
 			}
-			return output
 		}
 
-		def toString(index: Int): String = {
-			val datapoint = this.data(index)
-			var output = ""
+		//Second pass:
+		this.featureVocab.lock()
 
-			if (datapoint.rel(IS_NOT_PARAPHRASE) == 1.0) {
-				output += this.relVocab(IS_NOT_PARAPHRASE)
-			} else if (datapoint.rel(IS_PARAPHRASE) == 1.0) {
-				output += this.relVocab(IS_PARAPHRASE)
+		this.data = new Array[VectorSentencePair](rawsentpairs.size)
+		for ((rspair, index) <- rawsentpairs.zipWithIndex) {
+			val w1s = new Array[Int](rspair.rawwordpairs.length)
+			val w2s = new Array[Int](rspair.rawwordpairs.length)
+			val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
+
+			for (i <- 0 until rspair.rawwordpairs.length) {
+				val wpair:RawWordPair = rspair.rawwordpairs(i)
+				w1s(i) = this.wordVocab(rspair.rawwordpairs(i).word1)
+				w2s(i) = this.wordVocab(rspair.rawwordpairs(i).word2)
+
+				swfeatures(i) = SparseVector.zeros[Double](this.featureVocab.size + 1)
+				swfeatures(i)(this.featureVocab.size) = 1.0	//Bias feature
+
+				for(j <- 0 until wpair.rawfeatures.length) {
+					val f = this.featureVocab(wpair.rawfeatures(j))
+					//println(f + " " + ppair.rawfeatures(j))
+					if (f >= 0) {
+						swfeatures(i)(f) = 1.0
+					}
+				}
 			}
 
-			output += " | " + datapoint.trendname + " | " + datapoint.origsent + " | " + datapoint.candsent + "\n"
-			for (i <- 0 until datapoint.features.length) {
-				output += "WordPair #" + i + " : " + this.wordVocab(datapoint.w1ids(i)) + " | " + this.wordVocab(datapoint.w2ids(i)) + " | "
-
-				val strfeatures = Utils.bin2int(datapoint.features(i).toArray).map((f) => this.featureVocab(f))
-				output += strfeatures.mkString(" ")
-				output += "\n"
-			}
-
-			return output
+			this.data(index) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
 		}
 	}
+
+	override def toString(): String = {
+		var output = ""
+		for ( i <- 0 until data.length) {
+			val datapoint = this.data(i)
+			output += datapoint.rel(0) + " | " + datapoint.rel(1) + " | " + datapoint.trendname + " | " + datapoint.origsent + " | " + datapoint.candsent + "\n"
+		}
+		return output
+	}
+
+	def toString(index: Int): String = {
+		val datapoint = this.data(index)
+		var output = ""
+
+		if (datapoint.rel(IS_NOT_PARAPHRASE) == 1.0) {
+			output += this.relVocab(IS_NOT_PARAPHRASE)
+		} else if (datapoint.rel(IS_PARAPHRASE) == 1.0) {
+			output += this.relVocab(IS_PARAPHRASE)
+		}
+
+		output += " | " + datapoint.trendname + " | " + datapoint.origsent + " | " + datapoint.candsent + "\n"
+		for (i <- 0 until datapoint.features.length) {
+			output += "WordPair #" + i + " : " + this.wordVocab(datapoint.w1ids(i)) + " | " + this.wordVocab(datapoint.w2ids(i)) + " | "
+
+			val strfeatures = Utils.bin2int(datapoint.features(i).toArray).map((f) => this.featureVocab(f))
+			output += strfeatures.mkString(" ")
+			output += "\n"
+		}
+
+		return output
+	}
+}
