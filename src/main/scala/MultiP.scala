@@ -126,7 +126,7 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 
 	def train(nIter: Int, outFile: FileWriter) = {
 		//Randomly permute the training data
-		val training = Random.shuffle((0 until data.data.length).toList).filter((s12) => true)
+		val training = Random.shuffle((0 until data.data.length).toList)
 
 		for(i <- 0 until nIter) {
 			//println("iteration " + i)
