@@ -56,7 +56,7 @@ object Eval {
   //   max Precision point (and recall > 0.05)
   //   max Recall point (and precision > 0.5
   //This function is mainly used to monitor the training process, showing the model performance at each iteration
-  def PrintPR(sortedPredictions:List[Prediction], maxResults:Double) {
+  def PrintPR(sortedPredictions: List[Prediction], maxResults:Double) {
     var tp, fp, fn = 0.0
 
     var maxF,  maxFp, maxFr = 0.0
