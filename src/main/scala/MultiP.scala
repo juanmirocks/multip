@@ -56,7 +56,7 @@ abstract class Parameters(val data: SentPairsData) {
 			Utils.Timer.start("printTheta")
 		}
 
-		val thetaSorted = theta.argsort.reverse
+		val thetaSorted = argsort(theta).reverse
 		println("**** THETA ******")
 
 		val n = nFeat
@@ -78,7 +78,7 @@ abstract class Parameters(val data: SentPairsData) {
 		val fw = new FileWriter(outFile)
 
 		val NON_PARAPHRASE = 0
-		var thetaSorted = theta.argsort.reverse.filter((rf) => rf._1 != NON_PARAPHRASE)
+		var thetaSorted = argsort(theta).reverse.filter((rf) => rf._1 != NON_PARAPHRASE)
 		thetaSorted = thetaSorted.sortBy((rf) => -math.abs(theta(rf._1,rf._2)))
 
     	for(i <- 0 until 10000) {
@@ -169,15 +169,15 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 
 		if (dsp.rel(REL_PARAPHRASE) == 1.0) {
 			val scores = postZ(::,REL_PARAPHRASE)
-			val topscore = scores.max
+			val topscore = max(scores)
 
 			for (i <- 0 until dsp.features.length) {
 				if (scores(i) == topscore) {
 					z(i) = REL_PARAPHRASE
 					zScore(i) = topscore
 				} else {
-					z(i)      = postZ(i,::).t.argmax
-					zScore(i) = postZ(i,::).t.max
+					z(i)      = argmax(postZ(i,::))
+					zScore(i) = max(postZ(i,::))
 				}
 			}
 
@@ -230,8 +230,8 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 				postZ(i) = theta * dsp.features(i)
 			}
 
-			z(i) = postZ(i).argmax
-			zScore(i) = postZ(i).max
+			z(i) = argmax(postZ(i))
+			zScore(i) = max(postZ(i))
 
 			//Set the aggregate variables
 			rel.t(z(i)) = 1.0
@@ -285,8 +285,8 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 			zNoScore(i) -= logExpSum
 			zYesScore(i) -= logExpSum
 
-			z(i) = postZ(i).argmax
-			zScore(i) = postZ(i).max
+			z(i) = argmax(postZ(i))
+			zScore(i) = max(postZ(i))
 
 			//Set the aggregate variables
 			rel.t(z(i)) = 1.0
