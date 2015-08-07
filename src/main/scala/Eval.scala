@@ -22,7 +22,7 @@ object Eval {
   var useAveragedParameters = false
 
   // Evaluating only on binary outputs, using precision / recall / F1
-  def AggregateEval(param: Parameters, eval: SentPairsData) {
+  def aggregateEval(param: Parameters, eval: SentPairsData) {
 
     if (Constants.TIMING) {
       Utils.Timer.start("AggregateEval")
@@ -50,7 +50,7 @@ object Eval {
     }
 
     println("# of sentence pairs: " + eval.data.toList.length)
-    PrintPR(sortedPredictions, totalSentParaphrases)
+    printPR(sortedPredictions, totalSentParaphrases)
 
     if (Constants.TIMING) {
       Utils.Timer.stop("AggregateEval")
@@ -62,7 +62,7 @@ object Eval {
   //   max Precision point (and recall > 0.05)
   //   max Recall point (and precision > 0.5
   //This function is mainly used to monitor the training process, showing the model performance at each iteration
-  def PrintPR(sortedPredictions: List[Prediction], maxResults: Double) {
+  def printPR(sortedPredictions: List[Prediction], maxResults: Double) {
     var tp, fp, fn = 0.0
 
     var maxF,  maxFp, maxFr = 0.0

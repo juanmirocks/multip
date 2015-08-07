@@ -27,18 +27,18 @@ object Main extends App {
 
   val rawTrain = Data.readPitFile("./data/train.labeled.data", trainlabel)
   val rawEval = Data.readPitFile("./data/test.labeled.data", testlabel)
-  val List(Data(traindata, testdata)) = Data.createOne(rawTrain, trainlabel, rawEval, testlabel)
+  val Data(traindata, testdata) = Data.createOne(rawTrain, trainlabel, rawEval, testlabel)
 
   println("size of train data = " + traindata.data.length)
   println("size of test data = " + testdata.data.length)
 
   // build the MultiP (Multiple-instances Learning Paraphrase Model)
   val multip = new MultiP(traindata)
-  EvalIterations(multip, nIter, testdata, testlabel)
+  evalIterations(multip, nIter, testdata, testlabel)
 
 
   // The main process for training and testing the MultiP model
-  def EvalIterations(model: Parameters, nIter: Int, test: SentPairsData, againstexpertlabel: Boolean) {
+  def evalIterations(model: Parameters, nIter: Int, test: SentPairsData, againstexpertlabel: Boolean) {
 
     ///  Training  ///
     for(i <- 1 to nIter) {
@@ -54,7 +54,7 @@ object Main extends App {
       // Eval.AggregateEval(model, model.data)
       //Test on the test dataset
       println("Evaluate on the test data:")
-      Eval.AggregateEval(model, test)
+      Eval.aggregateEval(model, test)
     }
 
 
