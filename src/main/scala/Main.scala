@@ -24,200 +24,200 @@ object Main extends App {
 
   val trainlabel = false // false - use Turker's label; true - use expert's label
   val testlabel = true // false - use Turker's label; true - use expert's label
+  val againstexpertlabel = testlabel
 
   val rawTrain = Data.readPitFile("./data/train.labeled.data", trainlabel)
-  val rawEval = Data.readPitFile("./data/test.labeled.data", testlabel)
-  val Data(traindata, testdata) = Data.createOne(rawTrain, trainlabel, rawEval, testlabel)
+  //val rawEval = Data.readPitFile("./data/test.labeled.data", testlabel)
+  //val datas = Array(Data.createOne(rawTrain, trainlabel, rawEval, testlabel))
+  val datas = Data.createCV(rawTrain, trainlabel)
 
-  println("size of train data = " + traindata.data.length)
-  println("size of test data = " + testdata.data.length)
+  println("size of train data = " + datas.head.training.data.size)
+  println("size of eval data = " + datas.head.evaluation.data.size)
 
-  // build the MultiP (Multiple-instances Learning Paraphrase Model)
-  val multip = new MultiP(traindata)
-  evalIterations(multip, nIter, testdata, testlabel)
+  val models = datas.map(d => new MultiP(d.training))
 
 
-  // The main process for training and testing the MultiP model
-  def evalIterations(model: Parameters, nIter: Int, test: SentPairsData, againstexpertlabel: Boolean) {
 
-    ///  Training  ///
-    for(i <- 1 to nIter) {
-      println("****************** iteration " + i + "******************")
+  ///  Training  ///
+  for (i <- 1 to nIter) {
+    println("****************** iteration " + i + "******************")
 
+    models.foreach { model =>
       model.train(1, null)
-
-      println("Evaluation:")
-      Eval.aggregateEval(model, test, true)
     }
 
+    println("Evaluation:")
+    Eval.aggregateEval(models, datas.map(_.evaluation), useAveragedParameters = true)
+  }
 
-    ///  Testing #0   showing the weights of each feature   ///
-    if (runTests.contains("0")) {
-      model.printTheta
+  //---------------------------------------------------------------------------------
+
+  ///  Testing #0   showing the weights of each feature   ///
+  if (runTests.contains("0")) {
+    models.head.printTheta
+  }
+
+  ///  Testing #1   showing the model outputs for each input test sentence pair   ///
+
+  // use the parameters averaged from all iterations
+  val useAveragedParameters = true
+  // or use only the parameter of the last iteration
+  //val useAveragedParameters = false
+
+
+  val OUTPUT_TOP_PHRASE_PAIR = 10
+
+  //val datadata = model.data  // uncomment if want to do close test (test on training data)
+  val datadata = datas.head.evaluation          // uncomment if want to do open test (test on the test data)
+
+  var sysoutputs:Map[VectorSentencePair, Double] = Map()
+
+  var totalgoldpos = 0.0
+
+  var sysscores = new ArrayBuffer[Double]()
+
+  for (j <- 0 until datadata.data.length) {
+    val datapoint:VectorSentencePair = datadata.data(j)
+
+    val (yespairscores, nopairscores ) = models.head.inferAllDebug(datapoint, useAveragedParameters)
+    var output = ""
+
+    val predicted = models.head.inferAll(datapoint, useAveragedParameters)
+    val r = models.head.data.IS_PARAPHRASE
+    val prediction = predicted.rel(r)
+    var score = 0.0
+
+    val goldlabel = if (againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
+
+    if (goldlabel == true) {
+      totalgoldpos += 1.0
     }
 
-    ///  Testing #1   showing the model outputs for each input test sentence pair   ///
+    if (runTests.contains("1")) {
+      if (prediction == 1.0) {
+        print("SYS = YESPARA | " )
+      } else {
+        print("SYS = NOTPARA | " )
+      }
 
-    // use the parameters averaged from all iterations
-    val useAveragedParameters = true
-    // or use only the parameter of the last iteration
-    //val useAveragedParameters = false
+      print(datapoint.toString)
+    }
 
+    //for (k <- 0 until OUTPUT_TOP_PHRASE_PAIR) {
+    for (k <- 0 until datapoint.features.length) {
+      val top = argmax(yespairscores)
 
-    val OUTPUT_TOP_PHRASE_PAIR = 10
+      if (k == 0) {
+        score = exp(yespairscores(top))
+      }
 
-    //val datadata = model.data  // uncomment if want to do close test (test on training data)
-    val datadata = test          // uncomment if want to do open test (test on the test data)
+      output += "WordPair #" + top + " : " + exp(yespairscores(top)) + " | "  + exp(nopairscores(top)) + " | " + datadata.wordVocab(datapoint.w1ids(top)) + " | " + datadata.wordVocab(datapoint.w2ids(top)) + " | "
 
-    var sysoutputs:Map[VectorSentencePair, Double] = Map()
+      val strfeatures = Utils.bin2int(datapoint.features(top).toArray).map((f) => models.head.data.featureVocab(f))
+      output += strfeatures.mkString(" ")
+      output += "\n"
+      yespairscores(top) = Double.NegativeInfinity
+    }
 
-    var totalgoldpos = 0.0
+    sysoutputs += ( datapoint -> score)
+    if (runTests.contains("1")) {
+      println(output)
+    }
 
-    var sysscores = new ArrayBuffer[Double]()
+    sysscores += score
 
+  }
+
+  ///  Testing #2   showing the system outputs in SemEval 2015 PIT shared task format   ///
+  if (runTests.contains("2")) {
+    val dff = new java.text.DecimalFormat("0.0000", new java.text.DecimalFormatSymbols(java.util.Locale.ENGLISH))
+    val sysscorearray = sysscores.toArray
     for (j <- 0 until datadata.data.length) {
-      val datapoint:VectorSentencePair = datadata.data(j)
+      val sysscore = sysscorearray(j)
+      val datapoint: VectorSentencePair = datadata.data(j)
 
-      val (yespairscores, nopairscores ) = model.inferAllDebug(datapoint, useAveragedParameters)
-      var output = ""
+      val predicted = models.head.inferAll(datapoint, useAveragedParameters)
+      val goldlabel = if(againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
+      val isParaphrase = predicted.rel(models.head.data.IS_PARAPHRASE) == 1.0 // sysscore > 0.0001d (original code had this but was likely a bug)
 
-      val predicted = model.inferAll(datapoint, useAveragedParameters)
-      val r = model.data.IS_PARAPHRASE
-      val prediction = predicted.rel(r)
-      var score = 0.0
-
-      val goldlabel = if (againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
-
-      if (goldlabel == true) {
-        totalgoldpos += 1.0
+      if (isParaphrase) {
+        println("true\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
+      } else {
+        println("false\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
       }
+    }
+  }
 
-      if (runTests.contains("1")) {
-        if (prediction == 1.0) {
-          print("SYS = YESPARA | " )
+
+  ///  Testing #3   model performance aggregated on the test dataset   ///
+  ///               showing Precision/Recall curve, and max F1 point, and PINC scores etc  ///
+  if (runTests.contains("3")) {
+
+    // PRINT PR Curve with PINC score
+    var tp = 0.0
+    var fp = 0.0
+    //var tn = 0.0
+    var fn = 0.0
+    var totalpinc = 0.0
+
+
+
+    println("size of test data (count only unique) = " + sysoutputs.toList.length)
+    println( "RANK\t\tPRECIS.\tRECALL\tF1\tHIT-PINC|||\tPINC\tMultiP\tSENT1\tSENT2")
+
+    val sortedoutoputs = ListMap(sysoutputs.toList.sortBy{-_._2}:_*)
+    var i = 0
+
+    var maxfscore = 0.0
+    var maxfoutput = ""
+
+    val df = new java.text.DecimalFormat("#.###")
+
+    for ((paradata, parascore) <- sortedoutoputs) {
+
+      var strhit = "HIT"
+
+      val sent1 = paradata.origsent
+      val sent2 = paradata.candsent
+
+      if (sent1 != sent2) {
+        i += 1
+
+        val predicted = models.head.inferAll(paradata, useAveragedParameters)
+        val prediction = predicted.rel(models.head.data.IS_PARAPHRASE)
+
+        val goldlabel = if(againstexpertlabel) paradata.expertjudge.getOrElse(false) else paradata.amtjudge.getOrElse(false)
+
+        val pincscore = PINC.getRawScore(sent1, sent2)
+
+        if (goldlabel == true) {
+          tp += 1
+          totalpinc += pincscore
         } else {
-          print("SYS = NOTPARA | " )
+          fp += 1
+          strhit = "ERR"
         }
 
-        print(datapoint.toString)
-      }
 
-      //for (k <- 0 until OUTPUT_TOP_PHRASE_PAIR) {
-      for (k <- 0 until datapoint.features.length) {
-        val top = argmax(yespairscores)
+        val precision = tp / (tp + fp)
+        val recall = tp / totalgoldpos
+        val fscore = 2 * precision * recall / (precision + recall)
 
-        if (k == 0) {
-          score = exp(yespairscores(top))
-        }
+        val avgpinc = totalpinc / tp
 
-        output += "WordPair #" + top + " : " + exp(yespairscores(top)) + " | "  + exp(nopairscores(top)) + " | " + datadata.wordVocab(datapoint.w1ids(top)) + " | " + datadata.wordVocab(datapoint.w2ids(top)) + " | "
-
-        val strfeatures = Utils.bin2int(datapoint.features(top).toArray).map((f) => model.data.featureVocab(f))
-        output += strfeatures.mkString(" ")
-        output += "\n"
-        yespairscores(top) = Double.NegativeInfinity
-      }
-
-      sysoutputs += ( datapoint -> score)
-      if (runTests.contains("1")) {
+        var output = i + "\t" + strhit + "\t" + df.format(precision) + "\t" + df.format(recall) + "\t" + df.format(fscore) + "\t" + df.format(avgpinc) + "\t|||\t"
+        output += df.format(pincscore) + "\t"+ df.format(parascore) + "\t" + sent1 + "\t" + sent2
         println(output)
-      }
 
-      sysscores += score
-
-    }
-
-    ///  Testing #2   showing the system outputs in SemEval 2015 PIT shared task format   ///
-    if (runTests.contains("2")) {
-      val dff = new java.text.DecimalFormat("0.0000", new java.text.DecimalFormatSymbols(java.util.Locale.ENGLISH))
-      val sysscorearray = sysscores.toArray
-      for (j <- 0 until datadata.data.length) {
-        val sysscore = sysscorearray(j)
-        val datapoint: VectorSentencePair = datadata.data(j)
-
-        val predicted = model.inferAll(datapoint, useAveragedParameters)
-        val goldlabel = if(againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
-        val isParaphrase = predicted.rel(model.data.IS_PARAPHRASE) == 1.0 // sysscore > 0.0001d (original code had this but was likely a bug)
-
-        if (isParaphrase) {
-          println("true\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
-        } else {
-          println("false\t" + dff.format(sysscore))// + "\t" + datapoint.origsent + "\t" + datapoint.candsent)
+        if (fscore > maxfscore) {
+          maxfscore  = fscore
+          maxfoutput = output
         }
       }
     }
 
-
-    ///  Testing #3   model performance aggregated on the test dataset   ///
-    ///               showing Precision/Recall curve, and max F1 point, and PINC scores etc  ///
-    if (runTests.contains("3")) {
-
-      // PRINT PR Curve with PINC score
-      var tp = 0.0
-      var fp = 0.0
-      //var tn = 0.0
-      var fn = 0.0
-      var totalpinc = 0.0
-
-
-
-      println("size of test data (count only unique) = " + sysoutputs.toList.length)
-      println( "RANK\t\tPRECIS.\tRECALL\tF1\tHIT-PINC|||\tPINC\tMultiP\tSENT1\tSENT2")
-
-      val sortedoutoputs = ListMap(sysoutputs.toList.sortBy{-_._2}:_*)
-      var i = 0
-
-      var maxfscore = 0.0
-      var maxfoutput = ""
-
-      val df = new java.text.DecimalFormat("#.###")
-
-      for ((paradata, parascore) <- sortedoutoputs) {
-
-        var strhit = "HIT"
-
-        val sent1 = paradata.origsent
-        val sent2 = paradata.candsent
-
-        if (sent1 != sent2) {
-          i += 1
-
-          val predicted = model.inferAll(paradata, useAveragedParameters)
-          val prediction = predicted.rel(model.data.IS_PARAPHRASE)
-
-          val goldlabel = if(againstexpertlabel) paradata.expertjudge.getOrElse(false) else paradata.amtjudge.getOrElse(false)
-
-          val pincscore = PINC.getRawScore(sent1, sent2)
-
-          if (goldlabel == true) {
-            tp += 1
-            totalpinc += pincscore
-          } else {
-            fp += 1
-            strhit = "ERR"
-          }
-
-
-          val precision = tp / (tp + fp)
-          val recall = tp / totalgoldpos
-          val fscore = 2 * precision * recall / (precision + recall)
-
-          val avgpinc = totalpinc / tp
-
-          var output = i + "\t" + strhit + "\t" + df.format(precision) + "\t" + df.format(recall) + "\t" + df.format(fscore) + "\t" + df.format(avgpinc) + "\t|||\t"
-          output += df.format(pincscore) + "\t"+ df.format(parascore) + "\t" + sent1 + "\t" + sent2
-          println(output)
-
-          if (fscore > maxfscore) {
-            maxfscore  = fscore
-            maxfoutput = output
-          }
-        }
-      }
-
-      println()
-      println ("MAX" + maxfoutput)
-    }
+    println()
+    println ("MAX" + maxfoutput)
   }
 
 }
