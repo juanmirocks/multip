@@ -482,11 +482,11 @@ object Data {
 		Data(training, evaluation)
 	}
 
-	def createCV(rawSentPairs: ArrayBuffer[RawSentencePair], useExpert: Boolean, numCV: Int = 10, randomOrder: Boolean = false): Seq[Data] = {
+	def createCV(rawSentPairs: ArrayBuffer[RawSentencePair], useExpert: Boolean, numCV: Int = 10, randomOrder: Boolean = false): Array[Data] = {
 		val in = (if (randomOrder) util.Random.shuffle(rawSentPairs) else rawSentPairs)
 		val setSize = Math.ceil(rawSentPairs.size / numCV.toDouble).toInt
 
-		(0 until numCV).map(_ * setSize).map { evalStart =>
+		(0 until numCV).toArray.map(_ * setSize).map { evalStart =>
 			val evalEnd = Math.min(evalStart + setSize, in.size)
 			val train = new ArrayBuffer[RawSentencePair]()
 			val eval = new ArrayBuffer[RawSentencePair]()

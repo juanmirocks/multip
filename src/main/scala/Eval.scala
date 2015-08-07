@@ -13,48 +13,47 @@ import breeze.numerics._
 // uses the EvalIterations function in Main.scala; not this Eval object.
 object Eval {
 
-  class Prediction(val score: Double, val correct: Boolean, val rel: String, val annotated_sentence: String) {
-
-    def this(score: Double, correct: Boolean) = this(score, correct, null, null)
-
-  }
-
-  var useAveragedParameters = false
-
   // Evaluating only on binary outputs, using precision / recall / F1
-  def aggregateEval(param: Parameters, eval: SentPairsData) {
+  def aggregateEval(params: Seq[Parameters], evals: Seq[SentPairsData], useAveragedParameters: Boolean) {
+    require(params.size == evals.size && params.nonEmpty)
 
     if (Constants.TIMING) {
       Utils.Timer.start("AggregateEval")
     }
 
-    var totalSentParaphrases = 0.0	//For computing fn
-
+    var totalPositiveParaphrases = 0.0	//For computing fn
     var sortedPredictions = List[Prediction]()
-    for (ep <- Random.shuffle(eval.data.toList)) {
-      val predicted = param.inferAll(ep, useAveragedParameters)
 
-      val goldlabel = ep.rel(param.data.IS_PARAPHRASE)
-      val prediction = predicted.rel(param.data.IS_PARAPHRASE)
+    params.zip(evals).foreach { case (param, eval) =>
+      for (ep <- Random.shuffle(eval.data.toList)) {
+        val predicted = param.inferAll(ep, useAveragedParameters)
 
-      if (goldlabel == 1.0) {
-        totalSentParaphrases += 1.0
-      }
+        val goldlabel = ep.rel(param.data.IS_PARAPHRASE)
+        val prediction = predicted.rel(param.data.IS_PARAPHRASE)
 
-      if (goldlabel == 1.0 && prediction == 1.0) {
-        sortedPredictions ::= new Prediction(max(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE)), true)
-      }
-      else if (goldlabel == 0.0 && prediction == 1.0) {
-        sortedPredictions ::= new Prediction(max(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE)), false)
+        if (goldlabel == 1.0) {
+          totalPositiveParaphrases += 1.0
+        }
+
+        if (goldlabel == 1.0 && prediction == 1.0) {
+          sortedPredictions ::= new Prediction(max(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE)), true)
+        }
+        else if (goldlabel == 0.0 && prediction == 1.0) {
+          sortedPredictions ::= new Prediction(max(predicted.zScore(predicted.z :== param.data.IS_PARAPHRASE)), false)
+        }
       }
     }
 
-    println("# of sentence pairs: " + eval.data.toList.length)
-    printPR(sortedPredictions, totalSentParaphrases)
+    println("# of sentence pairs: " + evals.foldLeft(0) { (c, e) => c + e.data.size })
+    printPR(sortedPredictions, totalPositiveParaphrases)
 
     if (Constants.TIMING) {
       Utils.Timer.stop("AggregateEval")
     }
+  }
+
+  def aggregateEval(param: Parameters, eval: SentPairsData, useAveragedParameters: Boolean) {
+    aggregateEval(List(param), List(eval), useAveragedParameters)
   }
 
   //This evaluation try to use 3 different points to characterize the Precision/Recall curve:
@@ -105,11 +104,18 @@ object Eval {
     val r = tp / (tp + fn)
     val f = 2 * p * r / (p + r)
 
-    println("# of paraphrases (predicted):" + sortedPredictions.length)
+    println("# of _actual_ paraphrases: " + maxResults.toInt)
+    println("# of _predicted_ paraphrases: " + sortedPredictions.length)
     println("normal; P:" + p     + "\tR:" + r     + "\tF:" + f)
     println("max. F; P:" + maxFp + "\tR:" + maxFr + "\tF:" + maxF)
     println("max. P; P:" + maxP  + "\tR:" + maxPr + "\tF:" + maxPf)
     println("max. R; P:" + maxRp + "\tR:" + maxR  + "\tF:" + maxRf)
+  }
+
+  class Prediction(val score: Double, val correct: Boolean, val rel: String, val annotated_sentence: String) {
+
+    def this(score: Double, correct: Boolean) = this(score, correct, null, null)
+
   }
 
 }
