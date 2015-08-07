@@ -471,26 +471,40 @@ object Data {
 	val NGRAM_PHRASE_PAIR = 1
 	val N_FEATURE_CUTOFF = 3
 
-	def createOne(rawTraining: RawSentPairsData, useExpertTraining: Boolean, rawEvaluation: RawSentPairsData, useExpertEval: Boolean): List[Data] = {
+	def createOne(rawSentPairsTraining: ArrayBuffer[RawSentencePair], useExpertTraining: Boolean, rawSentPairsEvaluation: ArrayBuffer[RawSentencePair], useExpertEval: Boolean): Data = {
 		// read in training data, then test data.
 	  // the order matters, since test data has to create the features that exist in
 	  // the training data and use the same mapping to convert features into vector representations.
 
-		val training = createSentPairsData(useExpertTraining, rawTraining)
-		val evaluation = createSentPairsData(useExpertEval, rawEvaluation, training.featureVocab)
+		val training = createSentPairsData(rawSentPairsTraining, useExpertTraining)
+		val evaluation = createSentPairsData(rawSentPairsEvaluation, useExpertEval, training.featureVocab)
 
-		List(Data(training, evaluation))
+		Data(training, evaluation)
 	}
 
-	def createCV(file: String, useExpert: Boolean, numCV: Int = 10): List[Data] = {
-		???
+	def createCV(rawSentPairs: ArrayBuffer[RawSentencePair], useExpert: Boolean, numCV: Int = 10, randomOrder: Boolean = false): Seq[Data] = {
+		val in = (if (randomOrder) util.Random.shuffle(rawSentPairs) else rawSentPairs)
+		val setSize = Math.ceil(rawSentPairs.size / numCV.toDouble).toInt
+
+		(0 until numCV).map(_ * setSize).map { evalStart =>
+			val evalEnd = Math.min(evalStart + setSize, in.size)
+			val train = new ArrayBuffer[RawSentencePair]()
+			val eval = new ArrayBuffer[RawSentencePair]()
+			for (i <- 0 until in.size) {
+				if (i >= evalStart && i < evalEnd) eval += in(i)
+				else train += in(i)
+			}
+			val training = createSentPairsData(train, useExpert)
+			val evaluation = createSentPairsData(eval, useExpert, training.featureVocab)
+			Data(training, evaluation)
+		}
 	}
 
-	private def createSentPairsData(useExpert: Boolean, raw: RawSentPairsData, featureVocab: Vocab = new Vocab()): SentPairsData = {
+	private def createSentPairsData(rawSentPairs: ArrayBuffer[RawSentencePair], useExpert: Boolean, featureVocab: Vocab = new Vocab()): SentPairsData = {
 		val sentVocab = new Vocab
 		val wordVocab = new Vocab
 
-		for (rsentpair <- raw.sentpairs) {
+		for (rsentpair <- rawSentPairs) {
 			sentVocab.apply(rsentpair.origsent)
 			sentVocab.apply(rsentpair.candsent)
 
@@ -501,8 +515,14 @@ object Data {
 		}
 
 		if (!featureVocab.isLocked()) {
-			//Go over raw.featurecounter, and filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
-			for ((fstr, fcount) <- raw.featurecounter) {
+			//Add the features (count 1 for each sent pair)
+			var rawfeaturecounter = Map.empty[String, Int]
+			rawSentPairs.foreach { rsentpair =>
+				rawfeaturecounter = rawfeaturecounter ++ rsentpair.rawfeatureset.zip(Stream.continually(1)).toMap.map{ case (k,v) => k -> (v + rawfeaturecounter.getOrElse(k,0)) }
+			}
+
+			//Filter out features that appear in less than N_FEATURE_CUTOFF sentence pairs
+			for ((fstr, fcount) <- rawfeaturecounter) {
 				if (fcount >= N_FEATURE_CUTOFF) {
 					featureVocab.apply(fstr)
 				}
@@ -511,8 +531,8 @@ object Data {
 			featureVocab.lock()
 		}
 
-		val data = new Array[VectorSentencePair](raw.sentpairs.size)
-		for ((rspair, index) <- raw.sentpairs.zipWithIndex) {
+		val data = new Array[VectorSentencePair](rawSentPairs.size)
+		for ((rspair, index) <- rawSentPairs.zipWithIndex) {
 			val w1s = new Array[Int](rspair.rawwordpairs.length)
 			val w2s = new Array[Int](rspair.rawwordpairs.length)
 			val swfeatures = new Array[SparseVector[Double]](rspair.rawwordpairs.length)
@@ -540,9 +560,8 @@ object Data {
 		new SentPairsData(data, sentVocab.lock(), wordVocab.lock(), featureVocab)
 	}
 
-	def readPitFile(inFile: String, useExpert: Boolean): RawSentPairsData = {
+	def readPitFile(inFile: String, useExpert: Boolean): ArrayBuffer[RawSentencePair] = {
 		var rawsentpairs = new ArrayBuffer[RawSentencePair]()
-		var rawfeaturecounter = Map.empty[String, Int]
 
 		println("Read In Data From Annotation File: " + inFile)
 
@@ -586,18 +605,11 @@ object Data {
 				//CAUTION Original code had the check too: && rsentpair.valid -- Removed so far to report on all instances. However, it's better for training not to include them
 				if (rsentpair != null && ((useExpert == true && rsentpair.expertjudge != None) || useExpert == false && rsentpair.amtjudge != None)) {
 					rawsentpairs += rsentpair
-
-					//Add the features (count 1 for each sent pair) that appear in this sentence pair to 'this.rawfeaturecounter'
-					rawfeaturecounter = rawfeaturecounter ++ rsentpair.rawfeatureset.zip(Stream.continually(1)).toMap.map{ case (k,v) => k -> (v + rawfeaturecounter.getOrElse(k,0)) }
 				}
 			}
 
-			RawSentPairsData(rawsentpairs, rawfeaturecounter)
+			rawsentpairs
 		}
-
-	}
-
-	case class RawSentPairsData(sentpairs: ArrayBuffer[RawSentencePair], featurecounter: Map[String, Int]) {
 
 	}
 
