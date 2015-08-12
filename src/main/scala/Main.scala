@@ -27,9 +27,9 @@ object Main extends App {
   val againstexpertlabel = testlabel
 
   val rawTrain = Data.readPitFile("./data/train.labeled.data", trainlabel)
-  //val rawEval = Data.readPitFile("./data/test.labeled.data", testlabel)
-  //val datas = Array(Data.createOne(rawTrain, trainlabel, rawEval, testlabel))
-  val datas = Data.createCV(rawTrain, trainlabel)
+  val rawEval = Data.readPitFile("./data/test.labeled.data", testlabel)
+  val datas = Array(Data.createOne(rawTrain, rawEval))
+  //val datas = Data.createCV(rawTrain, trainlabel)
 
   println("size of train data = " + datas.head.training.data.size)
   println("size of eval data = " + datas.head.evaluation.data.size)
