@@ -153,8 +153,10 @@ abstract class SuperRawSentencePair  {
 	val trendid:String
 	val trendname:String
 
-	val amtjudge:Option[Boolean]
-	val expertjudge:Option[Boolean]
+	val label: Option[Boolean]
+	def isParaphrase: Boolean = label.getOrElse(false)
+	//val amtjudge:Option[Boolean]
+	//val expertjudge:Option[Boolean]
 
 	val owords:Array[String]
 	val cwords:Array[String]
@@ -217,38 +219,8 @@ object RawSentencePair {
 *    format that is used to read-in original data from (text format) annotation file and
 *    then covert to features into class SentPairsData.
 */
-class RawSentencePair (val trendid:String, val trendname:String, val origpossent:String, val candpossent:String, amtstr:String, expertstr:String) extends SuperRawSentencePair {
+class RawSentencePair (val trendid:String, val trendname:String, val origpossent:String, val candpossent:String, val label: Option[Boolean]) extends SuperRawSentencePair {
 	import RawSentencePair._
-
-	// Read in amt/expert judgement scores, and convert to binary true/false judgements
-	// AMT - amazon mechanical turk labels, uses different cutoffs from EXPERT annotation
-	val AMT_JUDGE_HIGH_THRESHOLD = 3
-	val AMT_JUDGE_LOW_THRESHOLD = 1
-	val EXPERT_JUDGE_HIGH_THRESHOLD = 4
-	val EXPERT_JUDGE_LOW_THRESHOLD = 2
-
-	var tmp_amtjudge:Option[Boolean] = None
-	if (amtstr.charAt(0) == '(') {
-		val amttmp = amtstr.charAt(1).asDigit
-		if (amttmp >= AMT_JUDGE_HIGH_THRESHOLD) {
-			tmp_amtjudge = Some(true)
-		} else if (amttmp <= AMT_JUDGE_LOW_THRESHOLD) {
-			tmp_amtjudge = Some(false)
-		}
-	}
-	val amtjudge = tmp_amtjudge
-
-	var tmp_expertjudge:Option[Boolean] = None
-	if (expertstr != null) {
-		val experttmp = expertstr.toInt
-		if (experttmp >= EXPERT_JUDGE_HIGH_THRESHOLD) {
-			tmp_expertjudge = Some(true)
-		} else if (experttmp <= EXPERT_JUDGE_LOW_THRESHOLD) {
-			tmp_expertjudge = Some(false)
-		}
-	}
-	val expertjudge = tmp_expertjudge
-
 
 	// create words/poss/stems arrays from input sentences
 	val otmptags = origpossent.split(" ")
@@ -369,7 +341,7 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 	}
 
 	override def toString(): String = {
-		var output = this.amtjudge + " | " + this.trendname + " | " + this.origsent + " | " + this.candsent + "\n"
+		var output = this.label + " | " + this.trendname + " | " + this.origsent + " | " + this.candsent + "\n"
 		output += this.owords.mkString(" ") + " | " + this.ostems.mkString(" ") + " | " + this.oposs.mkString(" ") + "\n"
 		output += this.cwords.mkString(" ") + " | " + this.cstems.mkString(" ") + " | " + this.cposs.mkString(" ")
 		for ( rwpair <- this.rawwordpairs) {
@@ -391,8 +363,8 @@ abstract class SuperVectorSentencePair  {
 	val trendid:String
 	val trendname:String
 
-	val amtjudge:Option[Boolean]
-	val expertjudge:Option[Boolean]
+	val label: Option[Boolean]
+	def isParaphrase: Boolean = label.getOrElse(false)
 
 	val nRel = 2  // number of relations is 2, either paraphrase or not paraphrase.
 
@@ -415,25 +387,20 @@ abstract class SuperVectorSentencePair  {
 *   and only carries a few important information in String format
 *   it can be generated from RawSentencePair
 */
-class VectorSentencePair (val trendid:String, val trendname:String, val origsent:String, val candsent:String, val amtjudge:Option[Boolean], val expertjudge:Option[Boolean]) extends SuperVectorSentencePair {
+class VectorSentencePair (val trendid:String, val trendname:String, val origsent:String, val candsent:String, val label: Option[Boolean]) extends SuperVectorSentencePair {
 
 	def this(rawsentpair: RawSentencePair) {
-		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.amtjudge, rawsentpair.expertjudge)
+		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.label)
 	}
 
-	def this(rawsentpair: RawSentencePair, w1ids: Array[Int], w2ids: Array[Int], features: Array[SparseVector[Double]], useExpert: Boolean) {
-		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.amtjudge, rawsentpair.expertjudge)
+	def this(rawsentpair: RawSentencePair, w1ids: Array[Int], w2ids: Array[Int], features: Array[SparseVector[Double]]) {
+		this(rawsentpair.trendid, rawsentpair.trendname, rawsentpair.origsent, rawsentpair.candsent, rawsentpair.label)
 
 		this.w1ids = w1ids
 		this.w2ids = w2ids
 		this.features = features
 
-		val judge = {
-			if (useExpert) rawsentpair.expertjudge
-			else rawsentpair.amtjudge
-		}
-
-		if (judge == Some(true)) {
+		if (this.label == Some(true)) {
 			this.rel.t(IS_PARAPHRASE) = 1.0
 		} else {
 			this.rel.t(IS_NOT_PARAPHRASE) = 1.0
@@ -441,7 +408,7 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 	}
 
 	def this (vsentpair:VectorSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVector[Double]], rel:Transpose[DenseVector[Double]], z:DenseVector[Int], zScore:DenseVector[Double]) {
-		this(vsentpair.trendid, vsentpair.trendname, vsentpair.origsent, vsentpair.candsent, vsentpair.amtjudge, vsentpair.expertjudge)
+		this(vsentpair.trendid, vsentpair.trendname, vsentpair.origsent, vsentpair.candsent, vsentpair.label)
 
 		this.w1ids = w1ids
 		this.w2ids = w2ids
@@ -471,18 +438,18 @@ object Data {
 	val NGRAM_PHRASE_PAIR = 1
 	val N_FEATURE_CUTOFF = 3
 
-	def createOne(rawSentPairsTraining: ArrayBuffer[RawSentencePair], useExpertTraining: Boolean, rawSentPairsEvaluation: ArrayBuffer[RawSentencePair], useExpertEval: Boolean): Data = {
+	def createOne(rawSentPairsTraining: ArrayBuffer[RawSentencePair], rawSentPairsEvaluation: ArrayBuffer[RawSentencePair]): Data = {
 		// read in training data, then test data.
 	  // the order matters, since test data has to create the features that exist in
 	  // the training data and use the same mapping to convert features into vector representations.
 
-		val training = createSentPairsData(rawSentPairsTraining, useExpertTraining)
-		val evaluation = createSentPairsData(rawSentPairsEvaluation, useExpertEval, training.featureVocab)
+		val training = createSentPairsData(rawSentPairsTraining)
+		val evaluation = createSentPairsData(rawSentPairsEvaluation, training.featureVocab)
 
 		Data(training, evaluation)
 	}
 
-	def createCV(rawSentPairs: ArrayBuffer[RawSentencePair], useExpert: Boolean, numCV: Int = 10, randomOrder: Boolean = false): Array[Data] = {
+	def createCV(rawSentPairs: ArrayBuffer[RawSentencePair], numCV: Int = 10, randomOrder: Boolean = false): Array[Data] = {
 		val in = (if (randomOrder) util.Random.shuffle(rawSentPairs) else rawSentPairs)
 		val setSize = Math.ceil(rawSentPairs.size / numCV.toDouble).toInt
 
@@ -494,13 +461,13 @@ object Data {
 				if (i >= evalStart && i < evalEnd) eval += in(i)
 				else train += in(i)
 			}
-			val training = createSentPairsData(train, useExpert)
-			val evaluation = createSentPairsData(eval, useExpert, training.featureVocab)
+			val training = createSentPairsData(train)
+			val evaluation = createSentPairsData(eval, training.featureVocab)
 			Data(training, evaluation)
 		}
 	}
 
-	private def createSentPairsData(rawSentPairs: ArrayBuffer[RawSentencePair], useExpert: Boolean, featureVocab: Vocab = new Vocab()): SentPairsData = {
+	private def createSentPairsData(rawSentPairs: ArrayBuffer[RawSentencePair], featureVocab: Vocab = new Vocab()): SentPairsData = {
 		val sentVocab = new Vocab
 		val wordVocab = new Vocab
 
@@ -554,10 +521,48 @@ object Data {
 				}
 			}
 
-			data(index) = new VectorSentencePair(rspair, w1s, w2s, swfeatures, useExpert)
+			data(index) = new VectorSentencePair(rspair, w1s, w2s, swfeatures)
 		}
 
 		new SentPairsData(data, sentVocab.lock(), wordVocab.lock(), featureVocab)
+	}
+
+	/**
+	* Parse something like (4, 1) to optional binary value Option[true/false]
+	*/
+	def parseAmazonTurkLabel(x: String): Option[Boolean] = {
+		val AMT_JUDGE_HIGH_THRESHOLD = 3
+		val AMT_JUDGE_LOW_THRESHOLD = 1
+
+		var tmp_amtjudge:Option[Boolean] = None
+		if (x.charAt(0) == '(') {
+			val amttmp = x.charAt(1).asDigit
+			if (amttmp >= AMT_JUDGE_HIGH_THRESHOLD) {
+				tmp_amtjudge = Some(true)
+			} else if (amttmp <= AMT_JUDGE_LOW_THRESHOLD) {
+				tmp_amtjudge = Some(false)
+			}
+		}
+		tmp_amtjudge
+	}
+
+	/**
+	* Parse something like 4 to optional binary value Option[true/false]
+	*/
+	def parseExpertLabel(x: String): Option[Boolean] = {
+		val EXPERT_JUDGE_HIGH_THRESHOLD = 4
+		val EXPERT_JUDGE_LOW_THRESHOLD = 2
+
+		var tmp_expertjudge:Option[Boolean] = None
+		if (x != null) {
+			val experttmp = x.toInt
+			if (experttmp >= EXPERT_JUDGE_HIGH_THRESHOLD) {
+				tmp_expertjudge = Some(true)
+			} else if (experttmp <= EXPERT_JUDGE_LOW_THRESHOLD) {
+				tmp_expertjudge = Some(false)
+			}
+		}
+		tmp_expertjudge
 	}
 
 	def readPitFile(inFile: String, useExpert: Boolean): ArrayBuffer[RawSentencePair] = {
@@ -574,6 +579,8 @@ object Data {
 
 			val cols = line.toLowerCase().trim().split('\t')
 			var rsentpair: RawSentencePair = null
+
+
 
 			//Read In one sentence pair from original annotation file
 			if (USE_POS) {
@@ -596,14 +603,13 @@ object Data {
 					trendname = cols(1),
 					origpossent = if (isTest) cols(6) else cols(5),
 					candpossent = if (isTest) cols(7) else cols(6),
-					amtstr = cols(4),
-					expertstr = if (isTest) cols(5) else null)
+					label = if (isTest && useExpert) parseExpertLabel(cols(5)) else parseAmazonTurkLabel(cols(4)))
 				}
 
 				//Extract phrase pairs and their features for this sentence pair
 
 				//CAUTION Original code had the check too: && rsentpair.valid -- Removed so far to report on all instances. However, it's better for training not to include them
-				if (rsentpair != null && ((useExpert == true && rsentpair.expertjudge != None) || useExpert == false && rsentpair.amtjudge != None)) {
+				if (rsentpair != null && rsentpair.label.isDefined) {
 					rawsentpairs += rsentpair
 				}
 			}

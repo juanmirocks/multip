@@ -24,7 +24,6 @@ object Main extends App {
 
   val trainlabel = false // false - use Turker's label; true - use expert's label
   val testlabel = true // false - use Turker's label; true - use expert's label
-  val againstexpertlabel = testlabel
 
   val rawTrain = Data.readPitFile("./data/train.labeled.data", trainlabel)
   val rawEval = Data.readPitFile("./data/test.labeled.data", testlabel)
@@ -87,7 +86,7 @@ object Main extends App {
     val prediction = predicted.rel(r)
     var score = 0.0
 
-    val goldlabel = if (againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
+    val goldlabel = datapoint.isParaphrase
 
     if (goldlabel == true) {
       totalgoldpos += 1.0
@@ -137,7 +136,7 @@ object Main extends App {
       val datapoint: VectorSentencePair = datadata.data(j)
 
       val predicted = models.head.inferAll(datapoint, useAveragedParameters)
-      val goldlabel = if(againstexpertlabel) datapoint.expertjudge.getOrElse(false) else datapoint.amtjudge.getOrElse(false)
+      val goldlabel = datapoint.isParaphrase
       val isParaphrase = predicted.rel(models.head.data.IS_PARAPHRASE) == 1.0 // sysscore > 0.0001d (original code had this but was likely a bug)
 
       if (isParaphrase) {
@@ -186,7 +185,7 @@ object Main extends App {
         val predicted = models.head.inferAll(paradata, useAveragedParameters)
         val prediction = predicted.rel(models.head.data.IS_PARAPHRASE)
 
-        val goldlabel = if(againstexpertlabel) paradata.expertjudge.getOrElse(false) else paradata.amtjudge.getOrElse(false)
+        val goldlabel = paradata.isParaphrase
 
         val pincscore = PINC.getRawScore(sent1, sent2)
 
