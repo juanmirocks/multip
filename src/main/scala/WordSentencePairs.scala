@@ -203,7 +203,11 @@ object RawSentencePair {
 		}.map(_.toArray)
 	}
 
-	def getBestCommonSubpart(commons: Iterable[Array[String]], isFirstBetter: (Array[String], Array[String]) => Boolean = ((a, b) => (a.mkString("").length >= b.mkString("").length))): Array[String] = {
+	def getBestCommonSubpart(
+		commons: Iterable[Array[String]],
+		isFirstBetter: (Array[String], Array[String]) => Boolean = ((a, b) => (a.mkString("").length >= b.mkString("").length))
+	): Array[String] = {
+
 		if (commons.isEmpty) Array()
 		else {
 			commons.tail.foldLeft(commons.head) { (prev, neu)  =>
@@ -449,11 +453,11 @@ object Data {
 		Data(training, evaluation)
 	}
 
-	def createCV(rawSentPairs: ArrayBuffer[RawSentencePair], numCV: Int = 10, randomOrder: Boolean = false): Array[Data] = {
+	def createCV(rawSentPairs: ArrayBuffer[RawSentencePair], numCV: Int = 10, randomOrder: Boolean = false): Traversable[Data] = {
 		val in = (if (randomOrder) util.Random.shuffle(rawSentPairs) else rawSentPairs)
 		val setSize = Math.ceil(rawSentPairs.size / numCV.toDouble).toInt
 
-		(0 until numCV).toArray.map(_ * setSize).map { evalStart =>
+		(0 until numCV).toIterable.map(_ * setSize).map { evalStart =>
 			val evalEnd = Math.min(evalStart + setSize, in.size)
 			val train = new ArrayBuffer[RawSentencePair]()
 			val eval = new ArrayBuffer[RawSentencePair]()

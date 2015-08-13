@@ -26,8 +26,8 @@ abstract class Parameters(val data: SentPairsData) {
 	def inferAll(dsp:VectorSentencePair):VectorSentencePair
 	def inferAll(dsp:VectorSentencePair, useAverage:Boolean):VectorSentencePair
 	def inferAllDebug(dsp:VectorSentencePair, useAverage:Boolean):(DenseVector[Double],DenseVector[Double])
-	def train(iterations:Int)
-	def train(iterations:Int, fw:FileWriter)
+	//def train(iterations:Int)
+	//def train(iterations:Int, fw:FileWriter)
 
 	var trainSimple = false
 	var updateTheta = true
@@ -120,16 +120,10 @@ abstract class Parameters(val data: SentPairsData) {
 
 class MultiP (data: SentPairsData) extends Parameters(data) {
 
-	def train(nIter:Int) = {
-		train(nIter, null)
-	}
+	def train(nIter: Int, outFile: FileWriter = null)(itrFun: Int => Unit = _ => {}): Unit = {
+		val training = Random.shuffle((0 until data.data.length).toList) //Randomly permute the training data
 
-	def train(nIter: Int, outFile: FileWriter) = {
-		//Randomly permute the training data
-		val training = Random.shuffle((0 until data.data.length).toList)
-
-		for(i <- 0 until nIter) {
-			//println("iteration " + i)
+		for (i <- 1 to nIter) {
 			for (s12 <- training) {
 				//Run the two inference algorithms
 				val iAll = inferAll(data.data(s12))
@@ -138,6 +132,8 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 				data.data(s12).z = iHidden.z
 				updateTheta(iAll, iHidden)
 			}
+
+			itrFun(i)
 		}
 	}
 
