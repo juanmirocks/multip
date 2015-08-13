@@ -10,6 +10,7 @@ import collection.immutable.ListMap
 
 import breeze.linalg._
 import breeze.numerics._
+import java.io.File
 
 object Constants {
   var DEBUG = false
@@ -18,14 +19,42 @@ object Constants {
 
 object Main extends App {
 
-  //number of iterations. normally set to 30 or 50 for a full run. And something like 1 or 5 for debugging.
-  val nIter = if (args.size > 0) args(0).toInt else 50
-  val runTests = if (args.size > 1) args.tail.toSet else Set[String]()
+  case class Config(
+    numIter: Int = 50,
+    runTests: Set[String] = Set[String](),
+    trainFile: File = null,
+    trainUseExpert: Boolean = false,
+    evalFile: File = null,
+    evalUseExpert: Boolean = true,
+    useAveragedParameters: Boolean = true
+  )
 
-  val rawTrain = Data.readPitFile("./data/train.labeled.data", useExpert = false)
-  val rawEval = Data.readPitFile("./data/test.labeled.data", useExpert = true)
-  val datas = Array(Data.createOne(rawTrain, rawEval))
-  //val datas = Data.createCV(rawTrain, useExpert = false)
+  val parser = new scopt.OptionParser[Config]("multip") {
+    head("multip", "0.2")
+    opt[Int]('i', "iterations") action { (x, c) => c.copy(numIter = x) } text("# iterations for training")
+    opt[Set[String]]('t', "tests")(scopt.Read.reads(_.split(",").toSet)) action { (x, c) => c.copy(runTests = x) } text("final tests to run as in original multip code")
+    opt[File]("trainFile") required() valueName("<file>") action { (x, c) => c.copy(trainFile = x) }
+    opt[Boolean]("trainUseExpert") action { (x, c) => c.copy(trainUseExpert = x) }
+    opt[File]("evalFile") valueName("<file>") action { (x, c) => c.copy(evalFile = x) } text("OPTIONAL if not given, 10-CV training is performed")
+    opt[Boolean]("evalUseExpert") action { (x, c) => c.copy(evalUseExpert = x) }
+    opt[Boolean]("useAveragedParameters") action { (x, c) => c.copy(useAveragedParameters = x) }
+  }
+
+  val config: Config = parser.parse(args, Config()) match {
+    case Some(config) => config
+    case None => System.exit(-1); ???
+  }
+
+  val datas = {
+    val rawTrain = Data.readPitFile(config.trainFile, useExpert = config.trainUseExpert)
+    if (config.evalFile == null) {
+      Data.createCV(rawTrain)
+    }
+    else {
+      val rawEval = Data.readPitFile(config.evalFile, useExpert = config.evalUseExpert)
+      Array(Data.createOne(rawTrain, rawEval))
+    }
+  }
 
   println("size of train data = " + datas.head.training.data.size)
   println("size of eval data = " + datas.head.evaluation.data.size)
@@ -35,7 +64,7 @@ object Main extends App {
 
 
   ///  Training  ///
-  for (i <- 1 to nIter) {
+  for (i <- 1 to config.numIter) {
     println("****************** iteration " + i + "******************")
 
     models.foreach { model =>
@@ -43,13 +72,13 @@ object Main extends App {
     }
 
     println("Evaluation:")
-    Eval.aggregateEval(models, datas.map(_.evaluation), useAveragedParameters = true)
+    Eval.aggregateEval(models, datas.map(_.evaluation), config.useAveragedParameters)
   }
 
   //---------------------------------------------------------------------------------
 
   ///  Testing #0   showing the weights of each feature   ///
-  if (runTests.contains("0")) {
+  if (config.runTests.contains("0")) {
     models.head.printTheta
   }
 
@@ -89,7 +118,7 @@ object Main extends App {
       totalgoldpos += 1.0
     }
 
-    if (runTests.contains("1")) {
+    if (config.runTests.contains("1")) {
       if (prediction == 1.0) {
         print("SYS = YESPARA | " )
       } else {
@@ -116,7 +145,7 @@ object Main extends App {
     }
 
     sysoutputs += ( datapoint -> score)
-    if (runTests.contains("1")) {
+    if (config.runTests.contains("1")) {
       println(output)
     }
 
@@ -125,7 +154,7 @@ object Main extends App {
   }
 
   ///  Testing #2   showing the system outputs in SemEval 2015 PIT shared task format   ///
-  if (runTests.contains("2")) {
+  if (config.runTests.contains("2")) {
     val dff = new java.text.DecimalFormat("0.0000", new java.text.DecimalFormatSymbols(java.util.Locale.ENGLISH))
     val sysscorearray = sysscores.toArray
     for (j <- 0 until datadata.data.length) {
@@ -147,7 +176,7 @@ object Main extends App {
 
   ///  Testing #3   model performance aggregated on the test dataset   ///
   ///               showing Precision/Recall curve, and max F1 point, and PINC scores etc  ///
-  if (runTests.contains("3")) {
+  if (config.runTests.contains("3")) {
 
     // PRINT PR Curve with PINC score
     var tp = 0.0

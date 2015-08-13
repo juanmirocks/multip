@@ -12,6 +12,7 @@ libraryDependencies  ++= Seq(
   //
   "org.clapper" %% "argot" % "1.0.3",
   "org.apache.commons" % "commons-math3" % "3.2",
+  "com.github.scopt" %% "scopt" % "3.3.0",
   //
   "org.scalacheck" %% "scalacheck" % "1.12.4" % "test",
    "org.scalatest" %% "scalatest" % "3.0.0-SNAP5" % "test"
