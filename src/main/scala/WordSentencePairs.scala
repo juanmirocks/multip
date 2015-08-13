@@ -565,13 +565,13 @@ object Data {
 		tmp_expertjudge
 	}
 
-	def readPitFile(inFile: String, useExpert: Boolean): ArrayBuffer[RawSentencePair] = {
+	def readPitFile(file: java.io.File, useExpert: Boolean): ArrayBuffer[RawSentencePair] = {
 		var rawsentpairs = new ArrayBuffer[RawSentencePair]()
 
-		println("Read In Data From Annotation File: " + inFile)
+		println("Read In Data From Annotation File: " + file)
 
 		var nLines = 0
-		for (line <- Source.fromFile(inFile).getLines()) {
+		for (line <- Source.fromFile(file).getLines()) {
 			nLines += 1
 			if (nLines % 1000 == 0) {
 				println("    read " + nLines + " lines")
