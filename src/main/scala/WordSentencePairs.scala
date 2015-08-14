@@ -175,6 +175,14 @@ abstract class SuperRawSentencePair  {
 
 object RawSentencePair {
 
+	val ENGLISH_STOPWORDS = {
+		Set("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now")
+	}
+
+	val BIOMEDICAL_STOPWORDS = {
+		Set(".", ":", ",", "?", ";", "!", "``", "&", "''", "...", "-", "(", ")", "amp", "study", "'s", "new", "de", "science", "research", "paper", "health", "nature", "article", "la", "%", "en", "risk", "'", "|", "n't", "use", "read", "human", "cancer", "may", "interesting", "social", "brain", "evidence", "”", "el", "“", "data", "us", "mt", "disease", "scientists", "review", "good")
+	}
+
 	/**
 	* Find unique common subparts of defined maxLength between two sentences of words.
 	* The sentences' words can also be empty, in which case they are not considered.
@@ -186,7 +194,7 @@ object RawSentencePair {
 	* * [A,  , C] & [X, B, C] -> Set([C])
 	*
 	*/
-	def findCommonSubparts(s1: Array[String], s2: Array[String], maxLength: Int = 2): Set[Array[String]] = {
+	def findCommonSubparts(s1: Array[String], s2: Array[String], maxLength: Int = 2, stopWords: Set[String] = ENGLISH_STOPWORDS ++ BIOMEDICAL_STOPWORDS): Set[Array[String]] = {
 		assert(maxLength >= 1, "maxLength must be possitive")
 		/* Possible addition: allow for own set/string equality function */
 
@@ -198,9 +206,11 @@ object RawSentencePair {
 			}
 		}
 
-		(1 to maxLength).foldLeft(Set[List[String]]()) { (ret, size) =>
+		val ret = (1 to maxLength).foldLeft(Set[List[String]]()) { (ret, size) =>
 			ret ++ (subparts(s1, size) & subparts(s2, size))
 		}.map(_.toArray)
+
+		ret.filterNot(subpart => stopWords.exists(st => subpart.indexOf(st) != -1))
 	}
 
 	def getBestCommonSubpart(
