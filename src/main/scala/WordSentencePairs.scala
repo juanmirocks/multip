@@ -250,7 +250,7 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 	}
 
 	/* Typical behavior (original MultiP algorithm) is to disregard the trending words as possible features.
-	* CAUTION However, we need on very short sentences, with equal size of the trending words vector. Otherwise, there would be no features
+	* CAUTION However, we need them on very short sentences, with equal size of the trending words vector. Otherwise, there would be no features
 	* This in fact invalidates original MultiP's algorithm that paraphrases must at least have trending words & an anchor in common */
 	val disregardTrendingWords = trendnamewords.size < otmpwords.size && trendnamewords.size < ctmpwords.size
 
