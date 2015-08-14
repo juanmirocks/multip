@@ -52,7 +52,7 @@ abstract class Parameters(val data: SentPairsData) {
 	}
 
 	def printTheta(): Unit = {
-		if(Constants.TIMING) {
+		if (Constants.TIMING) {
 			Utils.Timer.start("printTheta")
 		}
 
@@ -65,13 +65,13 @@ abstract class Parameters(val data: SentPairsData) {
 			println(data.relVocab(r) + "\t" + data.featureVocab(f) + "\t" + theta(r,f))
 		}
 
-		if(Constants.TIMING) {
+		if (Constants.TIMING) {
 			Utils.Timer.stop("printTheta")
 		}
 	}
 
-	def dumpTheta(outFile:String) {
-		if(Constants.TIMING) {
+	def dumpTheta(outFile:String): Unit = {
+		if (Constants.TIMING) {
 			Utils.Timer.start("dumpTheta")
 		}
 
@@ -81,16 +81,16 @@ abstract class Parameters(val data: SentPairsData) {
 		var thetaSorted = argsort(theta).reverse.filter((rf) => rf._1 != NON_PARAPHRASE)
 		thetaSorted = thetaSorted.sortBy((rf) => -math.abs(theta(rf._1,rf._2)))
 
-    	for(i <- 0 until 10000) {
-      		val (r,f) = thetaSorted(i)
-      		fw.write(data.relVocab(r) + "\t" + data.featureVocab(f) + "\t" + theta(r,f) + "\n")
-    	}
+		for (i <- 0 until 10000) {
+			val (r,f) = thetaSorted(i)
+			fw.write(data.relVocab(r) + "\t" + data.featureVocab(f) + "\t" + theta(r,f) + "\n")
+		}
 
 		fw.close()
 
-		if(Constants.TIMING) {
-      		Utils.Timer.stop("dumpTheta")
-    	}
+		if (Constants.TIMING) {
+			Utils.Timer.stop("dumpTheta")
+		}
 	}
 
 	def updateTheta(iAll:VectorSentencePair, iHidden:VectorSentencePair) {
@@ -98,9 +98,9 @@ abstract class Parameters(val data: SentPairsData) {
 			Utils.Timer.start("updateTheta")
 		}
 
-    	//Update le weights
-    	for(m <- 0 until iAll.features.length) {
-      		if(iAll.z(m) != iHidden.z(m)) {
+		//Update le weights
+		for (m <- 0 until iAll.features.length) {
+			if (iAll.z(m) != iHidden.z(m)) {
 				theta(iHidden.z(m),::).t     :+= iHidden.features(m)
 				theta(iAll.z(m),   ::).t     :-= iAll.features(m)
 
@@ -109,11 +109,11 @@ abstract class Parameters(val data: SentPairsData) {
 			}
 		}
 
-    	nUpdates += 1.0
+		nUpdates += 1.0
 
-    	if(Constants.TIMING) {
-      		Utils.Timer.stop("updateTheta")
-    	}
+		if (Constants.TIMING) {
+			Utils.Timer.stop("updateTheta")
+		}
  	}
 }
 
@@ -159,17 +159,15 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 		val REL_NON_PARAPHRASE = 0
 		val REL_PARAPHRASE = 1
 
-		var best:Int = 0
-
 		val covered = DenseVector.zeros[Boolean](dsp.features.length)
 
 		if (dsp.rel(REL_PARAPHRASE) == 1.0) {
-			val scores = postZ(::,REL_PARAPHRASE)
+			val scores = postZ(::, REL_PARAPHRASE)
 			val topscore = max(scores)
 
 			for (i <- 0 until dsp.features.length) {
 				if (scores(i) == topscore) {
-					z(i) = REL_PARAPHRASE
+					z(i)      = REL_PARAPHRASE
 					zScore(i) = topscore
 				} else {
 					z(i)      = argmax(postZ(i,::))
@@ -177,12 +175,14 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 				}
 			}
 
-		} else if (dsp.rel(REL_NON_PARAPHRASE) == 1.0) {
+		}
+		else if (dsp.rel(REL_NON_PARAPHRASE) == 1.0) {
 			for (i <- 0 until dsp.features.length) {
 				z(i)      = REL_NON_PARAPHRASE
-				zScore(i) = postZ(i,REL_NON_PARAPHRASE)
+				zScore(i) = postZ(i, REL_NON_PARAPHRASE)
 			}
-		} else {
+		}
+		else {
 			println("ERROR: MultiP.inferHidden - label missing ")
 		}
 
