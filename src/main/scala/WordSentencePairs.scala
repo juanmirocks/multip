@@ -327,16 +327,15 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 
 		val stemincommon = this.ostems.toSet & this.cstems.toSet
 
-		for ( ioword <- 0 until owords.length) {
+		for (ioword <- 0 until owords.length) {
 			val ostem = this.ostems(ioword)
 
-			for ( icword <- 0 until cwords.length) {
+			for (icword <- 0 until cwords.length) {
 				val cstem = this.cstems(icword)
 
-				if (  (ostem == cstem && stemincommon(ostem) && stemincommon(cstem)) && ostem!="XXXX" || (!stemincommon(ostem) && !stemincommon(cstem))) {
+				if ((ostem == cstem && stemincommon(ostem) && stemincommon(cstem)) && ostem!="XXXX" || (!stemincommon(ostem) && !stemincommon(cstem))) {
 					val wpair = new RawWordPair(ioword, icword, this)
 					wordpairs_buffer += wpair
-
 				}
 			}
 		}
@@ -348,7 +347,7 @@ class RawSentencePair (val trendid:String, val trendname:String, val origpossent
 		var output = this.label + " | " + this.trendname + " | " + this.origsent + " | " + this.candsent + "\n"
 		output += this.owords.mkString(" ") + " | " + this.ostems.mkString(" ") + " | " + this.oposs.mkString(" ") + "\n"
 		output += this.cwords.mkString(" ") + " | " + this.cstems.mkString(" ") + " | " + this.cposs.mkString(" ")
-		for ( rwpair <- this.rawwordpairs) {
+		for (rwpair <- this.rawwordpairs) {
 			output += "\n" + rwpair.toString()
 		}
 
