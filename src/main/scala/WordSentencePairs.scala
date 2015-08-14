@@ -471,6 +471,13 @@ object Data {
 		}
 	}
 
+	/**
+	* When reading in training data, let the input parameter "featureVocab" as default,
+	* and a new mapping of features to their vector index (featureVocab) will be built.
+	* Next, when reading in the test data, point the input paramater "featureVocab" to
+	* the trainingData.featureVocab instance you just created, and the feature vectors
+	* for test data will be created, using the same feature set of the training data.
+	*/
 	private def createSentPairsData(rawSentPairs: ArrayBuffer[RawSentencePair], featureVocab: Vocab = new Vocab()): SentPairsData = {
 		val sentVocab = new Vocab
 		val wordVocab = new Vocab
@@ -584,8 +591,6 @@ object Data {
 			val cols = line.toLowerCase().trim().split('\t')
 			var rsentpair: RawSentencePair = null
 
-
-
 			//Read In one sentence pair from original annotation file
 			if (USE_POS) {
 				val isTest = {
@@ -625,18 +630,6 @@ object Data {
 
 	/* Class SentPairsData:
 	*   a data structure of raw data read from files and converted into vector presentation for efficiency
-	*
-	* Main Function:
-	*   readinFromAnnotationFile (inFile:String, useExpert:Boolean, trainData:SentPairsData)
-	*     - inFile: the data file name
-	*     - trainData:
-	*          The internal data structure uses vector representations.
-	*          When reading in training data, set the input parameter "trainData" as "null",
-	*          and a new mapping of features to their vector index (featureVocab) will be built.
-	*          Next, when reading in the test data, point the input paramater "trainData" to
-	*          the training data instance (of type SentPairsData) you just created, and
-	*          the feature vectors for test data will be created, using the same feature set
-	*          of the training data.
 	*/
 	class SentPairsData(val data: Array[VectorSentencePair], val sentVocab: Vocab, val wordVocab: Vocab, val featureVocab: Vocab) {
 
