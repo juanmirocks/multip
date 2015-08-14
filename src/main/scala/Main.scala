@@ -91,6 +91,9 @@ object Main extends App {
   //---------------------------------------------------------------------------------
 
   def runTests(model: Parameters, data: Data): Unit = {
+    if (config.runTests.isEmpty) {
+      return
+    }
 
     ///  Testing #0   showing the weights of each feature   ///
     if (config.runTests.contains("0")) {
