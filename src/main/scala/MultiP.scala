@@ -199,14 +199,14 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 		result
 	}
 
-	def inferAll(dsp:VectorSentencePair):VectorSentencePair = {
+	def inferAll(dsp: VectorSentencePair): VectorSentencePair = {
 		inferAll(dsp, false)
 	}
 
 	// The inference algorithm that compute the vector parameter z' as described in our TACL paper
 	//    z' is the parameter vector that corresponds to the most likely assignment for each word pair
-	def inferAll(dsp: VectorSentencePair, useAverage: Boolean):VectorSentencePair = {
-		if(Constants.TIMING) {
+	def inferAll(dsp: VectorSentencePair, useAverage: Boolean): VectorSentencePair = {
+		if (Constants.TIMING) {
 			Utils.Timer.start("inferAll")
 		}
 
@@ -220,11 +220,7 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 		}
 
 		for (i <- 0 until dsp.features.length) {
-			if(useAverage) {
-				postZ(i) = theta_average * dsp.features(i)
-			} else {
-				postZ(i) = theta * dsp.features(i)
-			}
+			postZ(i) = (if (useAverage) theta_average else theta) * dsp.features(i)
 
 			z(i) = argmax(postZ(i))
 			zScore(i) = max(postZ(i))
@@ -249,7 +245,7 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 
 	// The inference algorithm that compute the vector parameter z* as described in our TACL paper
 	//    z* is the parameter vector that corresponds to the most likely assignment for each word pair that respects the sentence-level training label
-  	def inferAllDebug(dsp:VectorSentencePair, useAverage:Boolean):(DenseVector[Double], DenseVector[Double]) = {
+	def inferAllDebug(dsp:VectorSentencePair, useAverage:Boolean):(DenseVector[Double], DenseVector[Double]) = {
 		if(Constants.TIMING) {
 			Utils.Timer.start("inferAllDebug")
 		}
@@ -262,17 +258,12 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 
 		val rel    = DenseVector.zeros[Double](data.nRel).t
 
-		if(useAverage) {
+		if (useAverage) {
 			this.computeThetaAverage
 		}
 
-
 		for(i <- 0 until dsp.features.length) {
-			if(useAverage) {
-				postZ(i) = theta_average * dsp.features(i)
-			} else {
-				postZ(i) = theta * dsp.features(i)
-			}
+			postZ(i) = (if (useAverage) theta_average else theta) * dsp.features(i)
 
 			zNoScore(i) = postZ(i)(0)
 			zYesScore(i) = postZ(i)(1)
@@ -288,15 +279,14 @@ class MultiP (data: SentPairsData) extends Parameters(data) {
 			rel.t(z(i)) = 1.0
 		}
 
-		if(Constants.DEBUG) {
+		if (Constants.DEBUG) {
 			println("unconstrained result.z=" + z.map((r) => data.relVocab(r)))
 		}
 
-    	if(Constants.TIMING) {
-      		Utils.Timer.stop("inferAll")
-    	}
+		if (Constants.TIMING) {
+			Utils.Timer.stop("inferAll")
+		}
 
-    	return (zYesScore, zNoScore)
-
-  	}
+		return (zYesScore, zNoScore)
+	}
 }
