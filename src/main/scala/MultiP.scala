@@ -32,7 +32,7 @@ abstract class Parameters(val data: SentPairsData) {
 	var trainSimple = false
 	var updateTheta = true
 
-	def computeThetaAverage {
+	def computeThetaAverage(): Unit = {
     	if(Constants.TIMING) {
       		Utils.Timer.start("computeThetaAverage")
     	}
@@ -44,14 +44,14 @@ abstract class Parameters(val data: SentPairsData) {
     	}
 	}
 
-	def resetTheta {
+	def resetTheta(): Unit = {
 		theta         := 0.0
 		theta_sum     := 0.0
 		theta_average := 0.0
-		nUpdates      = 0.0
+		nUpdates       = 0.0
 	}
 
-	def printTheta {
+	def printTheta(): Unit = {
 		if(Constants.TIMING) {
 			Utils.Timer.start("printTheta")
 		}
