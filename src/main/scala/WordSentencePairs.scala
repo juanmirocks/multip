@@ -575,7 +575,7 @@ object Data {
 		tmp_expertjudge
 	}
 
-	def readPitFile(file: java.io.File, useExpert: Boolean): ArrayBuffer[RawSentencePair] = {
+	def readPitFile(file: java.io.File, useExpert: Boolean, forTraining: Boolean): ArrayBuffer[RawSentencePair] = {
 		var rawsentpairs = new ArrayBuffer[RawSentencePair]()
 
 		println("Read In Data From Annotation File: " + file)
@@ -616,8 +616,8 @@ object Data {
 
 				//Extract phrase pairs and their features for this sentence pair
 
-				//CAUTION Original code had the check too: && rsentpair.valid -- Removed so far to report on all instances. However, it's better for training not to include them
-				if (rsentpair != null && rsentpair.label.isDefined) {
+				//CAUTION Original code had always the check: rsentpair.valid -- Disregard the check for testing to report on all instances
+				if (rsentpair != null && rsentpair.label.isDefined && (!forTraining || rsentpair.valid)) {
 					rawsentpairs += rsentpair
 				}
 			}

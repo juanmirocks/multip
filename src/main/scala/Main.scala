@@ -48,12 +48,12 @@ object Main extends App {
   }
 
   val (datas, isCV) = {
-    val rawTrain = Data.readPitFile(config.trainFile, useExpert = config.trainUseExpert)
+    val rawTrain = Data.readPitFile(config.trainFile, useExpert = config.trainUseExpert, forTraining = true)
     if (config.evalFile == null) {
       (Data.createCV(rawTrain, randomOrder = true), true)
     }
     else {
-      val rawEval = Data.readPitFile(config.evalFile, useExpert = config.evalUseExpert)
+      val rawEval = Data.readPitFile(config.evalFile, useExpert = config.evalUseExpert, forTraining = false)
       (Iterable(Data.createOne(rawTrain, rawEval)), false)
     }
   }
