@@ -420,7 +420,7 @@ class VectorSentencePair (val trendid:String, val trendname:String, val origsent
 		}
 	}
 
-	def this (vsentpair:VectorSentencePair, w1ids:Array[Int], w2ids:Array[Int], features:Array[SparseVector[Double]], rel:Transpose[DenseVector[Double]], z:DenseVector[Int], zScore:DenseVector[Double]) {
+	def this(vsentpair: VectorSentencePair, w1ids: Array[Int], w2ids: Array[Int], features: Array[SparseVector[Double]], rel: Transpose[DenseVector[Double]], z: DenseVector[Int], zScore: DenseVector[Double]) {
 		this(vsentpair.trendid, vsentpair.trendname, vsentpair.origsent, vsentpair.candsent, vsentpair.label)
 
 		this.w1ids = w1ids
