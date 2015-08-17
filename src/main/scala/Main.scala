@@ -49,6 +49,7 @@ object Main extends App {
 
   val (datas, isCV) = {
     val rawTrain = Data.readPitFile(config.trainFile, useExpert = config.trainUseExpert, forTraining = true)
+
     if (config.evalFile == null) {
       (Data.createCV(rawTrain, randomOrder = true), true)
     }
