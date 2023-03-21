@@ -1,4 +1,4 @@
-This fork contains Wei Xu's MultiP original algorithm (in Scala 2.9), plus my code translation to Scala 2.11 & migration of the underlying numerical library [Scalala](https://github.com/scalala/Scalala) to [Breeze](https://github.com/scalanlp/breeze/tree/1.x).
+This fork contains Wei Xu's MultiP original algorithm (in Scala 2.9), plus **my code translation to Scala 2.11** & migration of the underlying numerical library [Scalala](https://github.com/scalala/Scalala) to [Breeze](https://github.com/scalanlp/breeze/tree/1.x).
 
 
 # MultiP
