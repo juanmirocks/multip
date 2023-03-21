@@ -4,6 +4,7 @@ This fork contains Wei Xu's MultiP original algorithm (in Scala 2.9), plus **my 
 # MultiP
 
 Authors: Wei Xu and Alan Ritter
+
 Contact: xwe@cis.upenn.edu
 
 Source code of the Multiple-instance Learning Paraphrase (MultiP) Model in the following paper:
